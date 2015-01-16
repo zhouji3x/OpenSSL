@@ -1,4 +1,4 @@
-/* crypto/des/ofb64ede.c */
+/* bugs/alpha.c */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -56,70 +56,37 @@
  * [including the GNU Public Licence.]
  */
 
-#include "des_locl.h"
+/* while not exactly a bug (ASN1 C leaves this undefined) it is
+ * something to watch out for.  This was fine on linux/NT/Solaris but not
+ * Alpha */
 
-/* The input and output encrypted as though 64bit ofb mode is being
- * used.  The extra state information to record how much of the
- * 64bit block we have used is contained in *num;
+/*-
+ * it is basically an example of
+ * func(*(a++),*(a++))
+ * which parameter is evaluated first?  It is not defined in ASN1 C.
  */
-void DES_ede3_ofb64_encrypt(register const unsigned char *in,
-			    register unsigned char *out, long length,
-			    DES_key_schedule *k1, DES_key_schedule *k2,
-			    DES_key_schedule *k3, DES_cblock *ivec,
-			    int *num)
-	{
-	register DES_LONG v0,v1;
-	register int n= *num;
-	register long l=length;
-	DES_cblock d;
-	register char *dp;
-	DES_LONG ti[2];
-	unsigned char *iv;
-	int save=0;
 
-	iv = &(*ivec)[0];
-	c2l(iv,v0);
-	c2l(iv,v1);
-	ti[0]=v0;
-	ti[1]=v1;
-	dp=(char *)d;
-	l2c(v0,dp);
-	l2c(v1,dp);
-	while (l--)
-		{
-		if (n == 0)
-			{
-			/* ti[0]=v0; */
-			/* ti[1]=v1; */
-			DES_encrypt3(ti,k1,k2,k3);
-			v0=ti[0];
-			v1=ti[1];
+#include <stdio.h>
 
-			dp=(char *)d;
-			l2c(v0,dp);
-			l2c(v1,dp);
-			save++;
-			}
-		*(out++)= *(in++)^d[n];
-		n=(n+1)&0x07;
-		}
-	if (save)
-		{
-/*-		v0=ti[0];
-		v1=ti[1];*/
-		iv = &(*ivec)[0];
-		l2c(v0,iv);
-		l2c(v1,iv);
-		}
-	v0=v1=ti[0]=ti[1]=0;
-	*num=n;
-	}
+#define TYPE    unsigned int
 
-#ifdef undef /* MACRO */
-void DES_ede2_ofb64_encrypt(register unsigned char *in,
-	     register unsigned char *out, long length, DES_key_schedule k1,
-	     DES_key_schedule k2, DES_cblock (*ivec), int *num)
-	{
-	DES_ede3_ofb64_encrypt(in, out, length, k1,k2,k1, ivec, num);
-	}
-#endif
+void func(a,b)
+TYPE *a;
+TYPE b;
+        {
+        printf("%ld -1 == %ld\n",a[0],b);
+        }
+
+main()
+        {
+        TYPE data[5]={1L,2L,3L,4L,5L};
+        TYPE *p;
+        int i;
+
+        p=data;
+
+        for (i=0; i<4; i++)
+                {
+                func(p,*(p++));
+                }
+        }
