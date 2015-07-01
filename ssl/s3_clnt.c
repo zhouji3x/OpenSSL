@@ -1457,8 +1457,6 @@ int ssl3_get_key_exchange(SSL *s)
 
 #ifndef OPENSSL_NO_PSK
     if (alg_a & SSL_aPSK) {
-        char tmp_id_hint[PSK_MAX_IDENTITY_LEN + 1];
-
         param_len = 2;
         if (param_len > n) {
             SSLerr(SSL_F_SSL3_GET_KEY_EXCHANGE, SSL_R_LENGTH_TOO_SHORT);
@@ -1490,14 +1488,7 @@ int ssl3_get_key_exchange(SSL *s)
             }
             param_len += i;
 
-            /*
-             * If received PSK identity hint contains NULL characters, the
-             * hint is truncated from the first NULL. p may not be ending
-             * with NULL, so create a NULL-terminated string.
-             */
-            memcpy(tmp_id_hint, p, i);
-            memset(tmp_id_hint + i, 0, PSK_MAX_IDENTITY_LEN + 1 - i);
-            s->session->psk_identity_hint = BUF_strdup(tmp_id_hint);
+            s->session->psk_identity_hint = BUF_strndup((char *)p, i);
             if (s->session->psk_identity_hint == NULL) {
                 al = SSL_AD_HANDSHAKE_FAILURE;
                 SSLerr(SSL_F_SSL3_GET_KEY_EXCHANGE, ERR_R_MALLOC_FAILURE);
