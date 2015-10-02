@@ -51,6 +51,19 @@ include $(LOCAL_PATH)/android-config.mk
 include $(BUILD_HOST_SHARED_LIBRARY)
 
 #######################################
+# host static library
+include $(CLEAR_VARS)
+LOCAL_SHARED_LIBRARIES +=  $(log_shared_libraries)
+LOCAL_STATIC_LIBRARIES += libcrypto_static2
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE := libssl-static2
+LOCAL_MULTILIB := both
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Ssl.mk
+include $(LOCAL_PATH)/Ssl-config-host.mk
+include $(LOCAL_PATH)/android-config.mk
+include $(BUILD_HOST_STATIC_LIBRARY)
+
+#######################################
 # ssltest
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := ssl/ssltest.c
