@@ -191,13 +191,13 @@ common_src_files := \
   crypto/x509v3/v3_utl.c \
 
 common_c_includes := \
-  external/openssl/. \
-  external/openssl/crypto \
-  external/openssl/crypto/asn1 \
-  external/openssl/crypto/evp \
-  external/openssl/crypto/modes \
-  external/openssl/include \
-  external/openssl/include/openssl \
+  vendor/intel/external/openssl/. \
+  vendor/intel/external/openssl/crypto \
+  vendor/intel/external/openssl/crypto/asn1 \
+  vendor/intel/external/openssl/crypto/evp \
+  vendor/intel/external/openssl/crypto/modes \
+  vendor/intel/external/openssl/include \
+  vendor/intel/external/openssl/include/openssl \
 
 arm_cflags := \
   -DAES_ASM \
