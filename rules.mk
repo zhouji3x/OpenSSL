@@ -30,7 +30,7 @@ MODULE_CFLAGS += -Wno-error=implicit-function-declaration
 # Global for other modules which include openssl headers
 GLOBAL_DEFINES += OPENSSL_SYS_TRUSTY
 
-LOCAL_C_INCLUDES := $(patsubst external/openssl/%,%,$(LOCAL_C_INCLUDES))
+LOCAL_C_INCLUDES := $(patsubst vendor/intel/external/openssl/%,%,$(LOCAL_C_INCLUDES))
 GLOBAL_INCLUDES += $(addprefix $(LOCAL_DIR)/,$(LOCAL_C_INCLUDES))
 
 MODULE_DEPS := \
