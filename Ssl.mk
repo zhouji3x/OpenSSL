@@ -6,9 +6,6 @@ include $(CLEAR_VARS)
 # and we don't have clang in unbundled build yet.
 LOCAL_SDK_VERSION := 9
 
-LOCAL_SRC_FILES += $(target_src_files)
-LOCAL_CFLAGS += $(target_c_flags)
-LOCAL_C_INCLUDES += $(target_c_includes)
 LOCAL_SHARED_LIBRARIES = $(log_shared_libraries)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libssl_static2
