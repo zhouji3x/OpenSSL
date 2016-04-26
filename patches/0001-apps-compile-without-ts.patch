@@ -1,0 +1,37 @@
+From 6e5a811d1ad61c9c84eeaf58f61588253302237a Mon Sep 17 00:00:00 2001
+From: Leo Sartre <leo.sartre@intel.com>
+Date: Fri, 27 May 2016 09:36:37 +0200
+Subject: [PATCH] apps: compile without ts
+
+Signed-off-by: Leo Sartre <leo.sartre@intel.com>
+---
+ apps/progs.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/apps/progs.h b/apps/progs.h
+index fb498fd..d4e6fad 100644
+--- a/apps/progs.h
++++ b/apps/progs.h
+@@ -45,7 +45,9 @@ extern int rand_main(int argc, char *argv[]);
+ extern int engine_main(int argc, char *argv[]);
+ extern int ocsp_main(int argc, char *argv[]);
+ extern int prime_main(int argc, char *argv[]);
++#if 0 /* ANDROID */
+ extern int ts_main(int argc, char *argv[]);
++#endif
+ extern int srp_main(int argc, char *argv[]);
+ 
+ #define FUNC_TYPE_GENERAL       1
+@@ -147,7 +149,9 @@ FUNCTION functions[] = {
+     {FUNC_TYPE_GENERAL, "ocsp", ocsp_main},
+ #endif
+     {FUNC_TYPE_GENERAL, "prime", prime_main},
++#if 0 /* ANDROID */
+     {FUNC_TYPE_GENERAL, "ts", ts_main},
++#endif
+ #ifndef OPENSSL_NO_SRP
+     {FUNC_TYPE_GENERAL, "srp", srp_main},
+ #endif
+-- 
+1.9.1
+
