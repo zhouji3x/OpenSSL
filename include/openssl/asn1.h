@@ -207,13 +207,13 @@ typedef struct asn1_const_ctx_st {
 # define ASN1_OBJECT_FLAG_CRITICAL        0x02/* critical x509v3 object id */
 # define ASN1_OBJECT_FLAG_DYNAMIC_STRINGS 0x04/* internal use */
 # define ASN1_OBJECT_FLAG_DYNAMIC_DATA    0x08/* internal use */
-typedef struct asn1_object_st {
+struct asn1_object_st {
     const char *sn, *ln;
     int nid;
     int length;
     const unsigned char *data;  /* data remains const after init */
     int flags;                  /* Should we free this one */
-} ASN1_OBJECT;
+};
 
 # define ASN1_STRING_FLAG_BITS_LEFT 0x08/* Set if 0x07 has bits left value */
 /*
@@ -362,21 +362,40 @@ typedef struct ASN1_VALUE_st ASN1_VALUE;
 
 TYPEDEF_D2I2D_OF(void);
 
-/*
- * The following macros and typedefs allow an ASN1_ITEM to be embedded in a
- * structure and referenced. Since the ASN1_ITEM pointers need to be globally
- * accessible (possibly from shared libraries) they may exist in different
- * forms. On platforms that support it the ASN1_ITEM structure itself will be
- * globally exported. Other platforms will export a function that returns an
- * ASN1_ITEM pointer. To handle both cases transparently the macros below
- * should be used instead of hard coding an ASN1_ITEM pointer in a structure.
- * The structure will look like this: typedef struct SOMETHING_st { ...
- * ASN1_ITEM_EXP *iptr; ... } SOMETHING; It would be initialised as e.g.:
- * SOMETHING somevar = {...,ASN1_ITEM_ref(X509),...}; and the actual pointer
- * extracted with: const ASN1_ITEM *it = ASN1_ITEM_ptr(somevar.iptr); Finally
- * an ASN1_ITEM pointer can be extracted from an appropriate reference with:
- * ASN1_ITEM_rptr(X509). This would be used when a function takes an ASN1_ITEM
- * * argument.
+/*-
+ * The following macros and typedefs allow an ASN1_ITEM
+ * to be embedded in a structure and referenced. Since
+ * the ASN1_ITEM pointers need to be globally accessible
+ * (possibly from shared libraries) they may exist in
+ * different forms. On platforms that support it the
+ * ASN1_ITEM structure itself will be globally exported.
+ * Other platforms will export a function that returns
+ * an ASN1_ITEM pointer.
+ *
+ * To handle both cases transparently the macros below
+ * should be used instead of hard coding an ASN1_ITEM
+ * pointer in a structure.
+ *
+ * The structure will look like this:
+ *
+ * typedef struct SOMETHING_st {
+ *      ...
+ *      ASN1_ITEM_EXP *iptr;
+ *      ...
+ * } SOMETHING;
+ *
+ * It would be initialised as e.g.:
+ *
+ * SOMETHING somevar = {...,ASN1_ITEM_ref(X509),...};
+ *
+ * and the actual pointer extracted with:
+ *
+ * const ASN1_ITEM *it = ASN1_ITEM_ptr(somevar.iptr);
+ *
+ * Finally an ASN1_ITEM pointer can be extracted from an
+ * appropriate reference with: ASN1_ITEM_rptr(X509). This
+ * would be used when a function takes an ASN1_ITEM * argument.
+ *
  */
 
 # ifndef OPENSSL_EXPORT_VAR_AS_FUNCTION
@@ -824,7 +843,7 @@ int ASN1_INTEGER_cmp(const ASN1_INTEGER *x, const ASN1_INTEGER *y);
 
 DECLARE_ASN1_FUNCTIONS(ASN1_ENUMERATED)
 
-int ASN1_UTCTIME_check(ASN1_UTCTIME *a);
+int ASN1_UTCTIME_check(const ASN1_UTCTIME *a);
 ASN1_UTCTIME *ASN1_UTCTIME_set(ASN1_UTCTIME *s, time_t t);
 ASN1_UTCTIME *ASN1_UTCTIME_adj(ASN1_UTCTIME *s, time_t t,
                                int offset_day, long offset_sec);
@@ -834,13 +853,15 @@ int ASN1_UTCTIME_cmp_time_t(const ASN1_UTCTIME *s, time_t t);
 time_t ASN1_UTCTIME_get(const ASN1_UTCTIME *s);
 # endif
 
-int ASN1_GENERALIZEDTIME_check(ASN1_GENERALIZEDTIME *a);
+int ASN1_GENERALIZEDTIME_check(const ASN1_GENERALIZEDTIME *a);
 ASN1_GENERALIZEDTIME *ASN1_GENERALIZEDTIME_set(ASN1_GENERALIZEDTIME *s,
                                                time_t t);
 ASN1_GENERALIZEDTIME *ASN1_GENERALIZEDTIME_adj(ASN1_GENERALIZEDTIME *s,
                                                time_t t, int offset_day,
                                                long offset_sec);
 int ASN1_GENERALIZEDTIME_set_string(ASN1_GENERALIZEDTIME *s, const char *str);
+int ASN1_TIME_diff(int *pday, int *psec,
+                   const ASN1_TIME *from, const ASN1_TIME *to);
 
 DECLARE_ASN1_FUNCTIONS(ASN1_OCTET_STRING)
 ASN1_OCTET_STRING *ASN1_OCTET_STRING_dup(const ASN1_OCTET_STRING *a);

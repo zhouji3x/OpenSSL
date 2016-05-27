@@ -225,13 +225,17 @@ int BIO_get_port(const char *str, unsigned short *port_ptr)
 int BIO_sock_error(int sock)
 {
     int j, i;
-    int size;
+    union {
+        size_t s;
+        int i;
+    } size;
 
 # if defined(OPENSSL_SYS_BEOS_R5)
     return 0;
 # endif
 
-    size = sizeof(int);
+    /* heuristic way to adapt for platforms that expect 64-bit optlen */
+    size.s = 0, size.i = sizeof(j);
     /*
      * Note: under Windows the third parameter is of type (char *) whereas
      * under other systems it is (void *) if you don't have a cast it will
@@ -608,8 +612,7 @@ int BIO_get_accept_socket(char *host, int bind_mode)
         struct sockaddr_in6 sa_in6;
 # endif
     } server, client;
-    int s = INVALID_SOCKET, cs;
-    socklen_t addrlen;
+    int s = INVALID_SOCKET, cs, addrlen;
     unsigned char ip[4];
     unsigned short port;
     char *str = NULL, *e;
@@ -690,9 +693,9 @@ int BIO_get_accept_socket(char *host, int bind_mode)
         if ((*p_getaddrinfo.f) (h, p, &hint, &res))
             break;
 
-        addrlen = res->ai_addrlen <= (socklen_t) sizeof(server) ?
-            res->ai_addrlen : (socklen_t) sizeof(server);
-        memcpy(&server, res->ai_addr, (size_t)addrlen);
+        addrlen = res->ai_addrlen <= sizeof(server) ?
+            res->ai_addrlen : sizeof(server);
+        memcpy(&server, res->ai_addr, addrlen);
 
         (*p_freeaddrinfo.f) (res);
         goto again;
@@ -705,7 +708,7 @@ int BIO_get_accept_socket(char *host, int bind_mode)
     memset((char *)&server, 0, sizeof(server));
     server.sa_in.sin_family = AF_INET;
     server.sa_in.sin_port = htons(port);
-    addrlen = (socklen_t) sizeof(server.sa_in);
+    addrlen = sizeof(server.sa_in);
 
     if (h == NULL || strcmp(h, "*") == 0)
         server.sa_in.sin_addr.s_addr = INADDR_ANY;

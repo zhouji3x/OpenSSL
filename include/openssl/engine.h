@@ -130,9 +130,8 @@ extern "C" {
 # define ENGINE_TABLE_FLAG_NOINIT        (unsigned int)0x0001
 
 /* ENGINE flags that can be set by ENGINE_set_flags(). */
-                                                                                                     /*- #define ENGINE_FLAGS_MALLOCED        0x0001 *//*
-                                                                                                      * Not used
-                                                                                                      */
+/* Not used */
+/* #define ENGINE_FLAGS_MALLOCED        0x0001 */
 
 /*
  * This flag is for ENGINEs that wish to handle the various 'CMD'-related
@@ -345,16 +344,16 @@ typedef int (*ENGINE_SSL_CLIENT_CERT_PTR) (ENGINE *, SSL *ssl,
                                            STACK_OF(X509) **pother,
                                            UI_METHOD *ui_method,
                                            void *callback_data);
-/*
- * These callback types are for an ENGINE's handler for cipher and digest
- * logic. These handlers have these prototypes; int foo(ENGINE *e, const
- * EVP_CIPHER **cipher, const int **nids, int nid); int foo(ENGINE *e, const
- * EVP_MD **digest, const int **nids, int nid); Looking at how to implement
- * these handlers in the case of cipher support, if the framework wants the
- * EVP_CIPHER for 'nid', it will call; foo(e, &p_evp_cipher, NULL, nid);
- * (return zero for failure) If the framework wants a list of supported
- * 'nid's, it will call; foo(e, NULL, &p_nids, 0); (returns number of 'nids'
- * or -1 for error)
+/*-
+ * These callback types are for an ENGINE's handler for cipher and digest logic.
+ * These handlers have these prototypes;
+ *   int foo(ENGINE *e, const EVP_CIPHER **cipher, const int **nids, int nid);
+ *   int foo(ENGINE *e, const EVP_MD **digest, const int **nids, int nid);
+ * Looking at how to implement these handlers in the case of cipher support, if
+ * the framework wants the EVP_CIPHER for 'nid', it will call;
+ *   foo(e, &p_evp_cipher, NULL, nid);    (return zero for failure)
+ * If the framework wants a list of supported 'nid's, it will call;
+ *   foo(e, NULL, &p_nids, 0); (returns number of 'nids' or -1 for error)
  */
 /*
  * Returns to a pointer to the array of supported cipher 'nid's. If the
@@ -414,7 +413,6 @@ void ENGINE_load_gost(void);
 #  endif
 # endif
 void ENGINE_load_cryptodev(void);
-void ENGINE_load_rsax(void);
 void ENGINE_load_rdrand(void);
 void ENGINE_load_builtin_engines(void);
 
@@ -425,13 +423,13 @@ void ENGINE_load_builtin_engines(void);
 unsigned int ENGINE_get_table_flags(void);
 void ENGINE_set_table_flags(unsigned int flags);
 
-/*
- * Manage registration of ENGINEs per "table". For each type, there are 3
- * functions; ENGINE_register_***(e) - registers the implementation from 'e'
- * (if it has one) ENGINE_unregister_***(e) - unregister the implementation
- * from 'e' ENGINE_register_all_***() - call ENGINE_register_***() for each
- * 'e' in the list Cleanup is automatically registered from each table when
- * required, so ENGINE_cleanup() will reverse any "register" operations.
+/*- Manage registration of ENGINEs per "table". For each type, there are 3
+ * functions;
+ *   ENGINE_register_***(e) - registers the implementation from 'e' (if it has one)
+ *   ENGINE_unregister_***(e) - unregister the implementation from 'e'
+ *   ENGINE_register_all_***() - call ENGINE_register_***() for each 'e' in the list
+ * Cleanup is automatically registered from each table when required, so
+ * ENGINE_cleanup() will reverse any "register" operations.
  */
 
 int ENGINE_register_RSA(ENGINE *e);

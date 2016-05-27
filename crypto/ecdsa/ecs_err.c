@@ -74,6 +74,7 @@ static ERR_STRING_DATA ECDSA_str_functs[] = {
     {ERR_FUNC(ECDSA_F_ECDSA_DATA_NEW_METHOD), "ECDSA_DATA_NEW_METHOD"},
     {ERR_FUNC(ECDSA_F_ECDSA_DO_SIGN), "ECDSA_do_sign"},
     {ERR_FUNC(ECDSA_F_ECDSA_DO_VERIFY), "ECDSA_do_verify"},
+    {ERR_FUNC(ECDSA_F_ECDSA_METHOD_NEW), "ECDSA_METHOD_new"},
     {ERR_FUNC(ECDSA_F_ECDSA_SIGN_SETUP), "ECDSA_sign_setup"},
     {0, NULL}
 };
@@ -85,8 +86,6 @@ static ERR_STRING_DATA ECDSA_str_reasons[] = {
     {ERR_REASON(ECDSA_R_ERR_EC_LIB), "err ec lib"},
     {ERR_REASON(ECDSA_R_MISSING_PARAMETERS), "missing parameters"},
     {ERR_REASON(ECDSA_R_NEED_NEW_SETUP_VALUES), "need new setup values"},
-    {ERR_REASON(ECDSA_R_NONCE_CANNOT_BE_PRECOMPUTED),
-     "nonce cannot be precomputed"},
     {ERR_REASON(ECDSA_R_NON_FIPS_METHOD), "non fips method"},
     {ERR_REASON(ECDSA_R_RANDOM_NUMBER_GENERATION_FAILED),
      "random number generation failed"},

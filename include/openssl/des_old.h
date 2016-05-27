@@ -1,25 +1,35 @@
-/* crypto/des/des_old.h -*- mode:C; c-file-style: "eay" -*- */
+/* crypto/des/des_old.h */
 
-/*
- * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING The
- * function names in here are deprecated and are only present to provide an
- * interface compatible with openssl 0.9.6 and older as well as libdes.
- * OpenSSL now provides functions where "des_" has been replaced with "DES_"
- * in the names, to make it possible to make incompatible changes that are
- * needed for C type security and other stuff. This include files has two
- * compatibility modes: - If OPENSSL_DES_LIBDES_COMPATIBILITY is defined,
- * you get an API that is compatible with libdes and SSLeay.  - If
- * OPENSSL_DES_LIBDES_COMPATIBILITY isn't defined, you get an API that is
- * compatible with OpenSSL 0.9.5x to 0.9.6x. Note that these modes break
- * earlier snapshots of OpenSSL, where libdes compatibility was the only
- * available mode or (later on) the prefered compatibility mode.  However,
- * after much consideration (and more or less violent discussions with
- * external parties), it was concluded that OpenSSL should be compatible with
- * earlier versions of itself before anything else.  Also, in all honesty,
- * libdes is an old beast that shouldn't really be used any more. Please
- * consider starting to use the DES_ functions rather than the des_ ones.
- * The des_ functions will disappear completely before OpenSSL 1.0! WARNING
- * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+/*-
+ * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+ *
+ * The function names in here are deprecated and are only present to
+ * provide an interface compatible with openssl 0.9.6 and older as
+ * well as libdes.  OpenSSL now provides functions where "des_" has
+ * been replaced with "DES_" in the names, to make it possible to
+ * make incompatible changes that are needed for C type security and
+ * other stuff.
+ *
+ * This include files has two compatibility modes:
+ *
+ *   - If OPENSSL_DES_LIBDES_COMPATIBILITY is defined, you get an API
+ *     that is compatible with libdes and SSLeay.
+ *   - If OPENSSL_DES_LIBDES_COMPATIBILITY isn't defined, you get an
+ *     API that is compatible with OpenSSL 0.9.5x to 0.9.6x.
+ *
+ * Note that these modes break earlier snapshots of OpenSSL, where
+ * libdes compatibility was the only available mode or (later on) the
+ * prefered compatibility mode.  However, after much consideration
+ * (and more or less violent discussions with external parties), it
+ * was concluded that OpenSSL should be compatible with earlier versions
+ * of itself before anything else.  Also, in all honesty, libdes is
+ * an old beast that shouldn't really be used any more.
+ *
+ * Please consider starting to use the DES_ functions rather than the
+ * des_ ones.  The des_ functions will disappear completely before
+ * OpenSSL 1.0!
+ *
+ * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
 
 /*

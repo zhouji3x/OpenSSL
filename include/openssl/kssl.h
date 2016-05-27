@@ -1,4 +1,4 @@
-/* ssl/kssl.h -*- mode: C; c-file-style: "eay" -*- */
+/* ssl/kssl.h */
 /*
  * Written by Vern Staats <staatsvr@asc.hpc.mil> for the OpenSSL project
  * 2000. project 2000.
@@ -87,8 +87,8 @@ extern "C" {
 #endif
 
 /*
- **      Depending on which KRB5 implementation used, some types from
- **      the other may be missing.  Resolve that here and now
+ *      Depending on which KRB5 implementation used, some types from
+ *      the other may be missing.  Resolve that here and now
  */
 #  ifdef KRB5_HEIMDAL
 typedef unsigned char krb5_octet;
@@ -101,9 +101,11 @@ typedef unsigned char krb5_octet;
 
 #  endif
 
-/*
- * Uncomment this to debug kssl problems or ** to trace usage of the Kerberos
- * session key ** ** #define KSSL_DEBUG
+/*-
+ *      Uncomment this to debug kssl problems or
+ *      to trace usage of the Kerberos session key
+ *
+ *      #define         KSSL_DEBUG
  */
 
 #  ifndef KRB5SVC
@@ -132,9 +134,9 @@ typedef struct kssl_err_st {
     char text[KSSL_ERR_MAX + 1];
 } KSSL_ERR;
 
-/*
- * Context for passing ** (1) Kerberos session key to SSL, and ** (2) Config
- * data between application and SSL lib
+/*-     Context for passing
+ *              (1) Kerberos session key to SSL, and
+ *              (2)     Config data between application and SSL lib
  */
 typedef struct kssl_ctx_st {
     /*      used by:    disposition:            */

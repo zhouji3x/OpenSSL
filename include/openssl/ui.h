@@ -1,4 +1,4 @@
-/* crypto/ui/ui.h -*- mode:C; c-file-style: "eay" -*- */
+/* crypto/ui/ui.h */
 /*
  * Written by Richard Levitte (richard@levitte.org) for the OpenSSL project
  * 2001.
@@ -86,46 +86,49 @@ UI *UI_new(void);
 UI *UI_new_method(const UI_METHOD *method);
 void UI_free(UI *ui);
 
-/*
- * The following functions are used to add strings to be printed and prompt
- * strings to prompt for data.  The names are UI_{add,dup}_<function>_string
- * and UI_{add,dup}_input_boolean.
- *
- * UI_{add,dup}_<function>_string have the following meanings: add add a text
- * or prompt string.  The pointers given to these functions are used
- * verbatim, no copying is done. dup make a copy of the text or prompt
- * string, then add the copy to the collection of strings in the user
- * interface. <function> The function is a name for the functionality that
- * the given string shall be used for.  It can be one of: input use the
- * string as data prompt. verify use the string as verification prompt.  This
- * is used to verify a previous input. info use the string for informational
- * output. error use the string for error output. Honestly, there's currently
- * no difference between info and error for the moment.
- *
- * UI_{add,dup}_input_boolean have the same semantics for "add" and "dup", and
- * are typically used when one wants to prompt for a yes/no response.
- *
- *
- * All of the functions in this group take a UI and a prompt string. The
- * string input and verify addition functions also take a flag argument, a
- * buffer for the result to end up with, a minimum input size and a maximum
- * input size (the result buffer MUST be large enough to be able to contain
- * the maximum number of characters).  Additionally, the verify addition
- * functions takes another buffer to compare the result against. The boolean
- * input functions take an action description string (which should be safe to
- * ignore if the expected user action is obvious, for example with a dialog
- * box with an OK button and a Cancel button), a string of acceptable
- * characters to mean OK and to mean Cancel.  The two last strings are checked
- * to make sure they don't have common characters.  Additionally, the same flag
- * argument as for the string input is taken, as well as a result buffer. The
- * result buffer is required to be at least one byte long.  Depending on the
- * answer, the first character from the OK or the Cancel character strings will
- * be stored in the first byte of the result buffer.  No NUL will be added, so
- * the result is *not* a string.
- *
- * On success, the all return an index of the added information.  That index is
- * usefull when retrieving results with UI_get0_result().
- */
+/*-
+   The following functions are used to add strings to be printed and prompt
+   strings to prompt for data.  The names are UI_{add,dup}_<function>_string
+   and UI_{add,dup}_input_boolean.
+
+   UI_{add,dup}_<function>_string have the following meanings:
+        add     add a text or prompt string.  The pointers given to these
+                functions are used verbatim, no copying is done.
+        dup     make a copy of the text or prompt string, then add the copy
+                to the collection of strings in the user interface.
+        <function>
+                The function is a name for the functionality that the given
+                string shall be used for.  It can be one of:
+                        input   use the string as data prompt.
+                        verify  use the string as verification prompt.  This
+                                is used to verify a previous input.
+                        info    use the string for informational output.
+                        error   use the string for error output.
+   Honestly, there's currently no difference between info and error for the
+   moment.
+
+   UI_{add,dup}_input_boolean have the same semantics for "add" and "dup",
+   and are typically used when one wants to prompt for a yes/no response.
+
+   All of the functions in this group take a UI and a prompt string.
+   The string input and verify addition functions also take a flag argument,
+   a buffer for the result to end up with, a minimum input size and a maximum
+   input size (the result buffer MUST be large enough to be able to contain
+   the maximum number of characters).  Additionally, the verify addition
+   functions takes another buffer to compare the result against.
+   The boolean input functions take an action description string (which should
+   be safe to ignore if the expected user action is obvious, for example with
+   a dialog box with an OK button and a Cancel button), a string of acceptable
+   characters to mean OK and to mean Cancel.  The two last strings are checked
+   to make sure they don't have common characters.  Additionally, the same
+   flag argument as for the string input is taken, as well as a result buffer.
+   The result buffer is required to be at least one byte long.  Depending on
+   the answer, the first character from the OK or the Cancel character strings
+   will be stored in the first byte of the result buffer.  No NUL will be
+   added, so the result is *not* a string.
+
+   On success, the all return an index of the added information.  That index
+   is usefull when retrieving results with UI_get0_result(). */
 int UI_add_input_string(UI *ui, const char *prompt, int flags,
                         char *result_buf, int minsize, int maxsize);
 int UI_dup_input_string(UI *ui, const char *prompt, int flags,
@@ -159,35 +162,36 @@ int UI_dup_error_string(UI *ui, const char *text);
  */
 # define UI_INPUT_FLAG_DEFAULT_PWD       0x02
 
-/*
- * The user of these routines may want to define flags of their own.  The
- * core UI won't look at those, but will pass them on to the method routines.
- * They must use higher bits so they don't get confused with the UI bits
- * above. UI_INPUT_FLAG_USER_BASE tells which is the lowest bit to use.  A
- * good example of use is this:
+/*-
+ * The user of these routines may want to define flags of their own.  The core
+ * UI won't look at those, but will pass them on to the method routines.  They
+ * must use higher bits so they don't get confused with the UI bits above.
+ * UI_INPUT_FLAG_USER_BASE tells which is the lowest bit to use.  A good
+ * example of use is this:
  *
- * #define MY_UI_FLAG1 (0x01 << UI_INPUT_FLAG_USER_BASE)
+ *    #define MY_UI_FLAG1       (0x01 << UI_INPUT_FLAG_USER_BASE)
  *
- */
+*/
 # define UI_INPUT_FLAG_USER_BASE 16
 
-/*
- * The following function helps construct a prompt.  object_desc is a textual
- * short description of the object, for example "pass phrase", and
- * object_name is the name of the object (might be a card name or a file
- * name. The returned string shall always be allocated on the heap with
+/*-
+ * The following function helps construct a prompt.  object_desc is a
+ * textual short description of the object, for example "pass phrase",
+ * and object_name is the name of the object (might be a card name or
+ * a file name.
+ * The returned string shall always be allocated on the heap with
  * OPENSSL_malloc(), and need to be free'd with OPENSSL_free().
  *
  * If the ui_method doesn't contain a pointer to a user-defined prompt
  * constructor, a default string is built, looking like this:
  *
- * "Enter {object_desc} for {object_name}:"
+ *       "Enter {object_desc} for {object_name}:"
  *
- * So, if object_desc has the value "pass phrase" and object_name has the
- * value "foo.key", the resulting string is:
+ * So, if object_desc has the value "pass phrase" and object_name has
+ * the value "foo.key", the resulting string is:
  *
- * "Enter pass phrase for foo.key:"
- */
+ *       "Enter pass phrase for foo.key:"
+*/
 char *UI_construct_prompt(UI *ui_method,
                           const char *object_desc, const char *object_name);
 
@@ -251,40 +255,47 @@ const UI_METHOD *UI_set_method(UI *ui, const UI_METHOD *meth);
 UI_METHOD *UI_OpenSSL(void);
 
 /* ---------- For method writers ---------- */
-/*
- * A method contains a number of functions that implement the low level of
- * the User Interface.  The functions are:
- *
- * an opener This function starts a session, maybe by opening a channel to a
- * tty, or by opening a window. a writer This function is called to write a
- * given string, maybe to the tty, maybe as a field label in a window. a
- * flusher This function is called to flush everything that has been output
- * so far.  It can be used to actually display a dialog box after it has been
- * built. a reader This function is called to read a given prompt, maybe from
- * the tty, maybe from a field in a window.  Note that it's called wth all
- * string structures, not only the prompt ones, so it must check such things
- * itself. a closer This function closes the session, maybe by closing the
- * channel to the tty, or closing the window.
- *
- * All these functions are expected to return:
- *
- * 0 on error. 1 on success. -1 on out-of-band events, for example if some
- * prompting has been canceled (by pressing Ctrl-C, for example).  This is
- * only checked when returned by the flusher or the reader.
- *
- * The way this is used, the opener is first called, then the writer for all
- * strings, then the flusher, then the reader for all strings and finally the
- * closer.  Note that if you want to prompt from a terminal or other command
- * line interface, the best is to have the reader also write the prompts
- * instead of having the writer do it.  If you want to prompt from a dialog
- * box, the writer can be used to build up the contents of the box, and the
- * flusher to actually display the box and run the event loop until all data
- * has been given, after which the reader only grabs the given data and puts
- * them back into the UI strings.
- *
- * All method functions take a UI as argument.  Additionally, the writer and
- * the reader take a UI_STRING.
- */
+/*-
+   A method contains a number of functions that implement the low level
+   of the User Interface.  The functions are:
+
+        an opener       This function starts a session, maybe by opening
+                        a channel to a tty, or by opening a window.
+        a writer        This function is called to write a given string,
+                        maybe to the tty, maybe as a field label in a
+                        window.
+        a flusher       This function is called to flush everything that
+                        has been output so far.  It can be used to actually
+                        display a dialog box after it has been built.
+        a reader        This function is called to read a given prompt,
+                        maybe from the tty, maybe from a field in a
+                        window.  Note that it's called wth all string
+                        structures, not only the prompt ones, so it must
+                        check such things itself.
+        a closer        This function closes the session, maybe by closing
+                        the channel to the tty, or closing the window.
+
+   All these functions are expected to return:
+
+        0       on error.
+        1       on success.
+        -1      on out-of-band events, for example if some prompting has
+                been canceled (by pressing Ctrl-C, for example).  This is
+                only checked when returned by the flusher or the reader.
+
+   The way this is used, the opener is first called, then the writer for all
+   strings, then the flusher, then the reader for all strings and finally the
+   closer.  Note that if you want to prompt from a terminal or other command
+   line interface, the best is to have the reader also write the prompts
+   instead of having the writer do it.  If you want to prompt from a dialog
+   box, the writer can be used to build up the contents of the box, and the
+   flusher to actually display the box and run the event loop until all data
+   has been given, after which the reader only grabs the given data and puts
+   them back into the UI strings.
+
+   All method functions take a UI as argument.  Additionally, the writer and
+   the reader take a UI_STRING.
+*/
 
 /*
  * The UI_STRING type is the data structure that contains all the needed info

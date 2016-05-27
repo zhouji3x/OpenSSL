@@ -291,8 +291,8 @@ typedef struct bio_st BIO_dummy;
 
 struct crypto_ex_data_st {
     STACK_OF(void) *sk;
-    int dummy;                  /* gcc is screwing up this data structure :-(
-                                 */
+    /* gcc is screwing up this data structure :-( */
+    int dummy;
 };
 DECLARE_STACK_OF(void)
 
@@ -554,21 +554,25 @@ int CRYPTO_remove_all_info(void);
  * Default debugging functions (enabled by CRYPTO_malloc_debug_init() macro;
  * used as default in CRYPTO_MDEBUG compilations):
  */
-/*
- * The last argument has the following significance: 0: called before the
- * actual memory allocation has taken place 1: called after the actual memory
- * allocation has taken place
+/*-
+ * The last argument has the following significance:
+ *
+ * 0:   called before the actual memory allocation has taken place
+ * 1:   called after the actual memory allocation has taken place
  */
 void CRYPTO_dbg_malloc(void *addr, int num, const char *file, int line,
                        int before_p);
 void CRYPTO_dbg_realloc(void *addr1, void *addr2, int num, const char *file,
                         int line, int before_p);
 void CRYPTO_dbg_free(void *addr, int before_p);
-/*
+/*-
  * Tell the debugging code about options.  By default, the following values
- * apply: 0: Clear all options. V_CRYPTO_MDEBUG_TIME (1): Set the "Show
- * Time" option. V_CRYPTO_MDEBUG_THREAD (2): Set the "Show Thread Number"
- * option. V_CRYPTO_MDEBUG_ALL (3): 1 + 2
+ * apply:
+ *
+ * 0:                           Clear all options.
+ * V_CRYPTO_MDEBUG_TIME (1):    Set the "Show Time" option.
+ * V_CRYPTO_MDEBUG_THREAD (2):  Set the "Show Thread Number" option.
+ * V_CRYPTO_MDEBUG_ALL (3):     1 + 2
  */
 void CRYPTO_dbg_set_options(long bits);
 long CRYPTO_dbg_get_options(void);
@@ -624,7 +628,7 @@ void OPENSSL_init(void);
  * into a defined order as the return value when a != b is undefined, other
  * than to be non-zero.
  */
-int CRYPTO_memcmp(const void *a, const void *b, size_t len);
+int CRYPTO_memcmp(const volatile void *a, const volatile void *b, size_t len);
 
 /* BEGIN ERROR CODES */
 /*

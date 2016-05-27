@@ -193,12 +193,6 @@ EVP_PKEY *EVP_PKEY_new(void)
     return (ret);
 }
 
-EVP_PKEY *EVP_PKEY_dup(EVP_PKEY *pkey)
-{
-    CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
-    return pkey;
-}
-
 /*
  * Setup a public key ASN1 method and ENGINE from a NID or a string. If pkey
  * is NULL just return 1 or 0 if the algorithm exists.
@@ -259,7 +253,7 @@ int EVP_PKEY_set_type_str(EVP_PKEY *pkey, const char *str, int len)
 
 int EVP_PKEY_assign(EVP_PKEY *pkey, int type, void *key)
 {
-    if (!EVP_PKEY_set_type(pkey, type))
+    if (pkey == NULL || !EVP_PKEY_set_type(pkey, type))
         return 0;
     pkey->pkey.ptr = key;
     return (key != NULL);
@@ -343,7 +337,7 @@ int EVP_PKEY_set1_DH(EVP_PKEY *pkey, DH *key)
 
 DH *EVP_PKEY_get1_DH(EVP_PKEY *pkey)
 {
-    if (pkey->type != EVP_PKEY_DH) {
+    if (pkey->type != EVP_PKEY_DH && pkey->type != EVP_PKEY_DHX) {
         EVPerr(EVP_F_EVP_PKEY_GET1_DH, EVP_R_EXPECTING_A_DH_KEY);
         return NULL;
     }

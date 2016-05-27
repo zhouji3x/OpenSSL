@@ -160,7 +160,7 @@ static int tls1_P_hash(const EVP_MD *md, const unsigned char *sec,
 {
     int chunk;
     size_t j;
-    EVP_MD_CTX ctx, ctx_tmp;
+    EVP_MD_CTX ctx, ctx_tmp, ctx_init;
     EVP_PKEY *mac_key;
     unsigned char A1[EVP_MAX_MD_SIZE];
     size_t A1_len;
@@ -171,14 +171,14 @@ static int tls1_P_hash(const EVP_MD *md, const unsigned char *sec,
 
     EVP_MD_CTX_init(&ctx);
     EVP_MD_CTX_init(&ctx_tmp);
-    EVP_MD_CTX_set_flags(&ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
-    EVP_MD_CTX_set_flags(&ctx_tmp, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+    EVP_MD_CTX_init(&ctx_init);
+    EVP_MD_CTX_set_flags(&ctx_init, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
     mac_key = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, sec, sec_len);
     if (!mac_key)
         goto err;
-    if (!EVP_DigestSignInit(&ctx, NULL, md, NULL, mac_key))
+    if (!EVP_DigestSignInit(&ctx_init, NULL, md, NULL, mac_key))
         goto err;
-    if (!EVP_DigestSignInit(&ctx_tmp, NULL, md, NULL, mac_key))
+    if (!EVP_MD_CTX_copy_ex(&ctx, &ctx_init))
         goto err;
     if (seed1 && !EVP_DigestSignUpdate(&ctx, seed1, seed1_len))
         goto err;
@@ -195,13 +195,11 @@ static int tls1_P_hash(const EVP_MD *md, const unsigned char *sec,
 
     for (;;) {
         /* Reinit mac contexts */
-        if (!EVP_DigestSignInit(&ctx, NULL, md, NULL, mac_key))
-            goto err;
-        if (!EVP_DigestSignInit(&ctx_tmp, NULL, md, NULL, mac_key))
+        if (!EVP_MD_CTX_copy_ex(&ctx, &ctx_init))
             goto err;
         if (!EVP_DigestSignUpdate(&ctx, A1, A1_len))
             goto err;
-        if (!EVP_DigestSignUpdate(&ctx_tmp, A1, A1_len))
+        if (olen > chunk && !EVP_MD_CTX_copy_ex(&ctx_tmp, &ctx))
             goto err;
         if (seed1 && !EVP_DigestSignUpdate(&ctx, seed1, seed1_len))
             goto err;
@@ -235,6 +233,7 @@ static int tls1_P_hash(const EVP_MD *md, const unsigned char *sec,
     EVP_PKEY_free(mac_key);
     EVP_MD_CTX_cleanup(&ctx);
     EVP_MD_CTX_cleanup(&ctx_tmp);
+    EVP_MD_CTX_cleanup(&ctx_init);
     OPENSSL_cleanse(A1, sizeof(A1));
     return ret;
 }
@@ -385,6 +384,8 @@ int tls1_change_cipher_state(SSL *s, int which)
             EVP_CIPHER_CTX_init(s->enc_read_ctx);
         dd = s->enc_read_ctx;
         mac_ctx = ssl_replace_hash(&s->read_hash, NULL);
+        if (mac_ctx == NULL)
+            goto err;
 #ifndef OPENSSL_NO_COMP
         if (s->expand != NULL) {
             COMP_CTX_free(s->expand);
@@ -405,9 +406,9 @@ int tls1_change_cipher_state(SSL *s, int which)
         }
 #endif
         /*
-         * this is done by dtls1_reset_seq_numbers for DTLS1_VERSION
+         * this is done by dtls1_reset_seq_numbers for DTLS
          */
-        if (s->version != DTLS1_VERSION)
+        if (!SSL_IS_DTLS(s))
             memset(&(s->s3->read_sequence[0]), 0, 8);
         mac_secret = &(s->s3->read_mac_secret[0]);
         mac_secret_size = &(s->s3->read_mac_secret_size);
@@ -423,11 +424,14 @@ int tls1_change_cipher_state(SSL *s, int which)
         dd = s->enc_write_ctx;
         if (SSL_IS_DTLS(s)) {
             mac_ctx = EVP_MD_CTX_create();
-            if (!mac_ctx)
+            if (mac_ctx == NULL)
                 goto err;
             s->write_hash = mac_ctx;
-        } else
+        } else {
             mac_ctx = ssl_replace_hash(&s->write_hash, NULL);
+            if (mac_ctx == NULL)
+                goto err;
+        }
 #ifndef OPENSSL_NO_COMP
         if (s->compress != NULL) {
             COMP_CTX_free(s->compress);
@@ -443,9 +447,9 @@ int tls1_change_cipher_state(SSL *s, int which)
         }
 #endif
         /*
-         * this is done by dtls1_reset_seq_numbers for DTLS1_VERSION
+         * this is done by dtls1_reset_seq_numbers for DTLS
          */
-        if (s->version != DTLS1_VERSION)
+        if (!SSL_IS_DTLS(s))
             memset(&(s->s3->write_sequence[0]), 0, 8);
         mac_secret = &(s->s3->write_mac_secret[0]);
         mac_secret_size = &(s->s3->write_mac_secret_size);
@@ -500,7 +504,12 @@ int tls1_change_cipher_state(SSL *s, int which)
     if (!(EVP_CIPHER_flags(c) & EVP_CIPH_FLAG_AEAD_CIPHER)) {
         mac_key = EVP_PKEY_new_mac_key(mac_type, NULL,
                                        mac_secret, *mac_secret_size);
-        EVP_DigestSignInit(mac_ctx, NULL, m, NULL, mac_key);
+        if (mac_key == NULL
+                || EVP_DigestSignInit(mac_ctx, NULL, m, NULL, mac_key) <= 0) {
+            EVP_PKEY_free(mac_key);
+            SSLerr(SSL_F_TLS1_CHANGE_CIPHER_STATE, ERR_R_INTERNAL_ERROR);
+            goto err2;
+        }
         EVP_PKEY_free(mac_key);
     }
 #ifdef TLS_DEBUG
@@ -574,6 +583,25 @@ int tls1_change_cipher_state(SSL *s, int which)
         SSLerr(SSL_F_TLS1_CHANGE_CIPHER_STATE, ERR_R_INTERNAL_ERROR);
         goto err2;
     }
+#ifdef OPENSSL_SSL_TRACE_CRYPTO
+    if (s->msg_callback) {
+        int wh = which & SSL3_CC_WRITE ? TLS1_RT_CRYPTO_WRITE : 0;
+        if (*mac_secret_size)
+            s->msg_callback(2, s->version, wh | TLS1_RT_CRYPTO_MAC,
+                            mac_secret, *mac_secret_size,
+                            s, s->msg_callback_arg);
+        if (c->key_len)
+            s->msg_callback(2, s->version, wh | TLS1_RT_CRYPTO_KEY,
+                            key, c->key_len, s, s->msg_callback_arg);
+        if (k) {
+            if (EVP_CIPHER_mode(c) == EVP_CIPH_GCM_MODE)
+                wh |= TLS1_RT_CRYPTO_FIXED_IV;
+            else
+                wh |= TLS1_RT_CRYPTO_IV;
+            s->msg_callback(2, s->version, wh, iv, k, s, s->msg_callback_arg);
+        }
+    }
+#endif
 
 #ifdef TLS_DEBUG
     printf("which = %04X\nkey=", which);
@@ -682,21 +710,21 @@ int tls1_setup_key_block(SSL *s)
     }
 #endif
 
-    if (s->method->version <= TLS1_VERSION &&
-        (s->mode & SSL_MODE_CBC_RECORD_SPLITTING) != 0) {
+    if (!(s->options & SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS)
+        && s->method->version <= TLS1_VERSION) {
         /*
          * enable vulnerability countermeasure for CBC ciphers with known-IV
          * problem (http://www.openssl.org/~bodo/tls-cbc.txt)
          */
-        s->s3->need_record_splitting = 1;
+        s->s3->need_empty_fragments = 1;
 
         if (s->session->cipher != NULL) {
             if (s->session->cipher->algorithm_enc == SSL_eNULL)
-                s->s3->need_record_splitting = 0;
+                s->s3->need_empty_fragments = 0;
 
 #ifndef OPENSSL_NO_RC4
             if (s->session->cipher->algorithm_enc == SSL_RC4)
-                s->s3->need_record_splitting = 0;
+                s->s3->need_empty_fragments = 0;
 #endif
         }
     }
@@ -741,7 +769,7 @@ int tls1_enc(SSL *s, int send)
             int ivlen;
             enc = EVP_CIPHER_CTX_cipher(s->enc_write_ctx);
             /* For TLSv1.1 and later explicit IV */
-            if (s->version >= TLS1_1_VERSION
+            if (SSL_USE_EXPLICIT_IV(s)
                 && EVP_CIPHER_mode(enc) == EVP_CIPH_CBC_MODE)
                 ivlen = EVP_CIPHER_iv_length(enc);
             else
@@ -789,7 +817,7 @@ int tls1_enc(SSL *s, int send)
 
             seq = send ? s->s3->write_sequence : s->s3->read_sequence;
 
-            if (s->version == DTLS1_VERSION || s->version == DTLS1_BAD_VER) {
+            if (SSL_IS_DTLS(s)) {
                 unsigned char dtlsseq[9], *p = dtlsseq;
 
                 s2n(send ? s->d1->w_epoch : s->d1->r_epoch, p);
@@ -913,85 +941,61 @@ int tls1_cert_verify_mac(SSL *s, int md_nid, unsigned char *out)
     }
 
     EVP_MD_CTX_init(&ctx);
-    EVP_MD_CTX_copy_ex(&ctx, d);
-    EVP_DigestFinal_ex(&ctx, out, &ret);
+    if (EVP_MD_CTX_copy_ex(&ctx, d) <=0
+            || EVP_DigestFinal_ex(&ctx, out, &ret) <= 0)
+        ret = 0;
     EVP_MD_CTX_cleanup(&ctx);
     return ((int)ret);
-}
-
-/*
- * tls1_handshake_digest calculates the current handshake hash and writes it
- * to |out|, which has space for |out_len| bytes. It returns the number of
- * bytes written or -1 in the event of an error. This function works on a
- * copy of the underlying digests so can be called multiple times and prior
- * to the final update etc.
- */
-int tls1_handshake_digest(SSL *s, unsigned char *out, size_t out_len)
-{
-    const EVP_MD *md;
-    EVP_MD_CTX ctx;
-    int i, err = 0, len = 0;
-    long mask;
-
-    EVP_MD_CTX_init(&ctx);
-
-    for (i = 0; ssl_get_handshake_digest(i, &mask, &md); i++) {
-        int hash_size;
-        unsigned int digest_len;
-        EVP_MD_CTX *hdgst = s->s3->handshake_dgst[i];
-
-        if ((mask & ssl_get_algorithm2(s)) == 0)
-            continue;
-
-        hash_size = EVP_MD_size(md);
-        if (!hdgst || hash_size < 0 || (size_t)hash_size > out_len) {
-            err = 1;
-            break;
-        }
-
-        if (!EVP_MD_CTX_copy_ex(&ctx, hdgst) || !EVP_DigestFinal_ex(&ctx, out, &digest_len) || digest_len != (unsigned int)hash_size) { /* internal
-                                                                                                                                         * error
-                                                                                                                                         */
-            err = 1;
-            break;
-        }
-        out += digest_len;
-        out_len -= digest_len;
-        len += digest_len;
-    }
-
-    EVP_MD_CTX_cleanup(&ctx);
-
-    if (err != 0)
-        return -1;
-    return len;
 }
 
 int tls1_final_finish_mac(SSL *s,
                           const char *str, int slen, unsigned char *out)
 {
+    unsigned int i;
+    EVP_MD_CTX ctx;
     unsigned char buf[2 * EVP_MAX_MD_SIZE];
-    unsigned char buf2[12];
+    unsigned char *q, buf2[12];
+    int idx;
+    long mask;
     int err = 0;
-    int digests_len;
+    const EVP_MD *md;
+
+    q = buf;
 
     if (s->s3->handshake_buffer)
         if (!ssl3_digest_cached_records(s))
             return 0;
 
-    digests_len = tls1_handshake_digest(s, buf, sizeof(buf));
-    if (digests_len < 0) {
-        err = 1;
-        digests_len = 0;
+    EVP_MD_CTX_init(&ctx);
+
+    for (idx = 0; ssl_get_handshake_digest(idx, &mask, &md); idx++) {
+        if (mask & ssl_get_algorithm2(s)) {
+            int hashsize = EVP_MD_size(md);
+            EVP_MD_CTX *hdgst = s->s3->handshake_dgst[idx];
+            if (!hdgst || hashsize < 0
+                || hashsize > (int)(sizeof buf - (size_t)(q - buf))) {
+                /*
+                 * internal error: 'buf' is too small for this cipersuite!
+                 */
+                err = 1;
+            } else {
+                if (!EVP_MD_CTX_copy_ex(&ctx, hdgst) ||
+                    !EVP_DigestFinal_ex(&ctx, q, &i) ||
+                    (i != (unsigned int)hashsize))
+                    err = 1;
+                q += hashsize;
+            }
+        }
     }
 
     if (!tls1_PRF(ssl_get_algorithm2(s),
-                  str, slen, buf, digests_len, NULL, 0, NULL, 0, NULL, 0,
+                  str, slen, buf, (int)(q - buf), NULL, 0, NULL, 0, NULL, 0,
                   s->session->master_key, s->session->master_key_length,
                   out, buf2, sizeof buf2))
         err = 1;
+    EVP_MD_CTX_cleanup(&ctx);
 
-    OPENSSL_cleanse(buf, digests_len);
+    OPENSSL_cleanse(buf, (int)(q - buf));
     OPENSSL_cleanse(buf2, sizeof(buf2));
     if (err)
         return 0;
@@ -1035,7 +1039,7 @@ int tls1_mac(SSL *ssl, unsigned char *md, int send)
         mac_ctx = &hmac;
     }
 
-    if (ssl->version == DTLS1_VERSION || ssl->version == DTLS1_BAD_VER) {
+    if (SSL_IS_DTLS(ssl)) {
         unsigned char dtlsseq[8], *p = dtlsseq;
 
         s2n(send ? ssl->d1->w_epoch : ssl->d1->r_epoch, p);
@@ -1066,17 +1070,24 @@ int tls1_mac(SSL *ssl, unsigned char *md, int send)
          * are hashing because that gives an attacker a timing-oracle.
          */
         /* Final param == not SSLv3 */
-        ssl3_cbc_digest_record(mac_ctx,
-                               md, &md_size,
-                               header, rec->input,
-                               rec->length + md_size, orig_len,
-                               ssl->s3->read_mac_secret,
-                               ssl->s3->read_mac_secret_size, 0);
+        if (ssl3_cbc_digest_record(mac_ctx,
+                                   md, &md_size,
+                                   header, rec->input,
+                                   rec->length + md_size, orig_len,
+                                   ssl->s3->read_mac_secret,
+                                   ssl->s3->read_mac_secret_size, 0) <= 0) {
+            if (!stream_mac)
+                EVP_MD_CTX_cleanup(&hmac);
+            return -1;
+        }
     } else {
-        EVP_DigestSignUpdate(mac_ctx, header, sizeof(header));
-        EVP_DigestSignUpdate(mac_ctx, rec->input, rec->length);
-        t = EVP_DigestSignFinal(mac_ctx, md, &md_size);
-        OPENSSL_assert(t > 0);
+        if (EVP_DigestSignUpdate(mac_ctx, header, sizeof(header)) <= 0
+                || EVP_DigestSignUpdate(mac_ctx, rec->input, rec->length) <= 0
+                || EVP_DigestSignFinal(mac_ctx, md, &md_size) <= 0) {
+            if (!stream_mac)
+                EVP_MD_CTX_cleanup(&hmac);
+            return -1;
+        }
 #ifdef OPENSSL_FIPS
         if (!send && FIPS_mode())
             tls_fips_digest_extra(ssl->enc_read_ctx,
@@ -1103,7 +1114,7 @@ int tls1_mac(SSL *ssl, unsigned char *md, int send)
     }
 #endif
 
-    if (ssl->version != DTLS1_VERSION && ssl->version != DTLS1_BAD_VER) {
+    if (!SSL_IS_DTLS(ssl)) {
         for (i = 7; i >= 0; i--) {
             ++seq[i];
             if (seq[i] != 0)
@@ -1167,6 +1178,22 @@ int tls1_generate_master_secret(SSL *s, unsigned char *out, unsigned char *p,
     fprintf(stderr, "Master Secret:\n");
     BIO_dump_fp(stderr, (char *)s->session->master_key,
                 SSL3_MASTER_SECRET_SIZE);
+#endif
+
+#ifdef OPENSSL_SSL_TRACE_CRYPTO
+    if (s->msg_callback) {
+        s->msg_callback(2, s->version, TLS1_RT_CRYPTO_PREMASTER,
+                        p, len, s, s->msg_callback_arg);
+        s->msg_callback(2, s->version, TLS1_RT_CRYPTO_CLIENT_RANDOM,
+                        s->s3->client_random, SSL3_RANDOM_SIZE,
+                        s, s->msg_callback_arg);
+        s->msg_callback(2, s->version, TLS1_RT_CRYPTO_SERVER_RANDOM,
+                        s->s3->server_random, SSL3_RANDOM_SIZE,
+                        s, s->msg_callback_arg);
+        s->msg_callback(2, s->version, TLS1_RT_CRYPTO_MASTER,
+                        s->session->master_key,
+                        SSL3_MASTER_SECRET_SIZE, s, s->msg_callback_arg);
+    }
 #endif
 
 #ifdef KSSL_DEBUG

@@ -84,7 +84,6 @@ EC_KEY *EC_KEY_new(void)
     ret->pub_key = NULL;
     ret->priv_key = NULL;
     ret->enc_flag = 0;
-    ret->nonce_from_hash_flag = 0;
     ret->conv_form = POINT_CONVERSION_UNCOMPRESSED;
     ret->references = 1;
     ret->method_data = NULL;
@@ -194,7 +193,6 @@ EC_KEY *EC_KEY_copy(EC_KEY *dest, const EC_KEY *src)
 
     /* copy the rest */
     dest->enc_flag = src->enc_flag;
-    dest->nonce_from_hash_flag = src->nonce_from_hash_flag;
     dest->conv_form = src->conv_form;
     dest->version = src->version;
     dest->flags = src->flags;
@@ -368,7 +366,10 @@ int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key, BIGNUM *x,
     BN_CTX *ctx = NULL;
     BIGNUM *tx, *ty;
     EC_POINT *point = NULL;
-    int ok = 0, tmp_nid, is_char_two = 0;
+    int ok = 0;
+#ifndef OPENSSL_NO_EC2M
+    int tmp_nid, is_char_two = 0;
+#endif
 
     if (!key || !key->group || !x || !y) {
         ECerr(EC_F_EC_KEY_SET_PUBLIC_KEY_AFFINE_COORDINATES,
@@ -384,14 +385,17 @@ int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key, BIGNUM *x,
     if (!point)
         goto err;
 
+    tx = BN_CTX_get(ctx);
+    ty = BN_CTX_get(ctx);
+    if (ty == NULL)
+        goto err;
+
+#ifndef OPENSSL_NO_EC2M
     tmp_nid = EC_METHOD_get_field_type(EC_GROUP_method_of(key->group));
 
     if (tmp_nid == NID_X9_62_characteristic_two_field)
         is_char_two = 1;
 
-    tx = BN_CTX_get(ctx);
-    ty = BN_CTX_get(ctx);
-#ifndef OPENSSL_NO_EC2M
     if (is_char_two) {
         if (!EC_POINT_set_affine_coordinates_GF2m(key->group, point,
                                                   x, y, ctx))
@@ -483,16 +487,6 @@ unsigned int EC_KEY_get_enc_flags(const EC_KEY *key)
 void EC_KEY_set_enc_flags(EC_KEY *key, unsigned int flags)
 {
     key->enc_flag = flags;
-}
-
-int EC_KEY_get_nonce_from_hash(const EC_KEY *key)
-{
-    return key->nonce_from_hash_flag;
-}
-
-void EC_KEY_set_nonce_from_hash(EC_KEY *key, int on)
-{
-    key->nonce_from_hash_flag = on != 0;
 }
 
 point_conversion_form_t EC_KEY_get_conv_form(const EC_KEY *key)

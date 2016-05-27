@@ -60,13 +60,12 @@
 #include <openssl/err.h>
 #include <openssl/obj_mac.h>
 #include <openssl/bn.h>
-#include <openssl/rand.h>
 
 static ECDSA_SIG *ecdsa_do_sign(const unsigned char *dgst, int dlen,
                                 const BIGNUM *, const BIGNUM *,
                                 EC_KEY *eckey);
 static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in, BIGNUM **kinvp,
-                            BIGNUM **rp, const unsigned char *dgst, int dlen);
+                            BIGNUM **rp);
 static int ecdsa_do_verify(const unsigned char *dgst, int dgst_len,
                            const ECDSA_SIG *sig, EC_KEY *eckey);
 
@@ -88,9 +87,8 @@ const ECDSA_METHOD *ECDSA_OpenSSL(void)
     return &openssl_ecdsa_meth;
 }
 
-static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
-                            BIGNUM **kinvp, BIGNUM **rp,
-                            const unsigned char *dgst, int dlen)
+static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in, BIGNUM **kinvp,
+                            BIGNUM **rp)
 {
     BN_CTX *ctx = NULL;
     BIGNUM *k = NULL, *r = NULL, *order = NULL, *X = NULL;
@@ -131,25 +129,12 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
     do {
         /* get random k */
         do
-#ifndef OPENSSL_NO_SHA512
-            if (EC_KEY_get_nonce_from_hash(eckey)) {
-                if (!BN_generate_dsa_nonce(k, order,
-                                           EC_KEY_get0_private_key(eckey),
-                                           dgst, dlen, ctx)) {
-                    ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP,
-                             ECDSA_R_RANDOM_NUMBER_GENERATION_FAILED);
-                    goto err;
-                }
-            } else
-#endif
-            {
-                if (!BN_rand_range(k, order)) {
-                    ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP,
-                             ECDSA_R_RANDOM_NUMBER_GENERATION_FAILED);
-                    goto err;
-                }
+            if (!BN_rand_range(k, order)) {
+                ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP,
+                         ECDSA_R_RANDOM_NUMBER_GENERATION_FAILED);
+                goto err;
             }
-        while (BN_is_zero(k));
+        while (BN_is_zero(k)) ;
 
         /*
          * We do not want timing information to leak the length of k, so we
@@ -194,10 +179,32 @@ static int ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in,
     while (BN_is_zero(r));
 
     /* compute the inverse of k */
-    if (!BN_mod_inverse(k, k, order, ctx)) {
-        ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP, ERR_R_BN_LIB);
-        goto err;
+    if (EC_GROUP_get_mont_data(group) != NULL) {
+        /*
+         * We want inverse in constant time, therefore we utilize the fact
+         * order must be prime and use Fermats Little Theorem instead.
+         */
+        if (!BN_set_word(X, 2)) {
+            ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP, ERR_R_BN_LIB);
+            goto err;
+        }
+        if (!BN_mod_sub(X, order, X, order, ctx)) {
+            ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP, ERR_R_BN_LIB);
+            goto err;
+        }
+        BN_set_flags(X, BN_FLG_CONSTTIME);
+        if (!BN_mod_exp_mont_consttime
+            (k, k, X, order, ctx, EC_GROUP_get_mont_data(group))) {
+            ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP, ERR_R_BN_LIB);
+            goto err;
+        }
+    } else {
+        if (!BN_mod_inverse(k, k, order, ctx)) {
+            ECDSAerr(ECDSA_F_ECDSA_SIGN_SETUP, ERR_R_BN_LIB);
+            goto err;
+        }
     }
+
     /* clear old values if necessary */
     if (*rp != NULL)
         BN_clear_free(*rp);
@@ -281,9 +288,7 @@ static ECDSA_SIG *ecdsa_do_sign(const unsigned char *dgst, int dgst_len,
     }
     do {
         if (in_kinv == NULL || in_r == NULL) {
-            if (!ecdsa->
-                meth->ecdsa_sign_setup(eckey, ctx, &kinv, &ret->r, dgst,
-                                       dgst_len)) {
+            if (!ECDSA_sign_setup(eckey, ctx, &kinv, &ret->r)) {
                 ECDSAerr(ECDSA_F_ECDSA_DO_SIGN, ERR_R_ECDSA_LIB);
                 goto err;
             }

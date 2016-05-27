@@ -125,6 +125,7 @@
 #ifndef HEADER_BN_H
 # define HEADER_BN_H
 
+# include <limits.h>
 # include <openssl/e_os2.h>
 # ifndef OPENSSL_NO_FP_API
 #  include <stdio.h>            /* FILE */
@@ -255,24 +256,6 @@ extern "C" {
 #  define BN_HEX_FMT1     "%X"
 #  define BN_HEX_FMT2     "%08X"
 # endif
-
-/*
- * 2011-02-22 SMS. In various places, a size_t variable or a type cast to
- * size_t was used to perform integer-only operations on pointers.  This
- * failed on VMS with 64-bit pointers (CC /POINTER_SIZE = 64) because size_t
- * is still only 32 bits.  What's needed in these cases is an integer type
- * with the same size as a pointer, which size_t is not certain to be. The
- * only fix here is VMS-specific.
- */
-# if defined(OPENSSL_SYS_VMS)
-#  if __INITIAL_POINTER_SIZE == 64
-#   define PTR_SIZE_INT long long
-#  else                         /* __INITIAL_POINTER_SIZE == 64 */
-#   define PTR_SIZE_INT int
-#  endif                        /* __INITIAL_POINTER_SIZE == 64 [else] */
-# else                          /* defined(OPENSSL_SYS_VMS) */
-#  define PTR_SIZE_INT size_t
-# endif                         /* defined(OPENSSL_SYS_VMS) [else] */
 
 # define BN_DEFAULT_BITS 1280
 
@@ -737,14 +720,19 @@ const BIGNUM *BN_get0_nist_prime_256(void);
 const BIGNUM *BN_get0_nist_prime_384(void);
 const BIGNUM *BN_get0_nist_prime_521(void);
 
-int BN_generate_dsa_nonce(BIGNUM *out, const BIGNUM *range,
-                          const BIGNUM *priv, const unsigned char *message,
-                          size_t message_len, BN_CTX *ctx);
-
 /* library internal functions */
 
-# define bn_expand(a,bits) ((((((bits+BN_BITS2-1))/BN_BITS2)) <= (a)->dmax)?\
-        (a):bn_expand2((a),(bits+BN_BITS2-1)/BN_BITS2))
+# define bn_expand(a,bits) \
+    ( \
+        bits > (INT_MAX - BN_BITS2 + 1) ? \
+            NULL \
+        : \
+            (((bits+BN_BITS2-1)/BN_BITS2) <= (a)->dmax) ? \
+                (a) \
+            : \
+                bn_expand2((a),(bits+BN_BITS2-1)/BN_BITS2) \
+    )
+
 # define bn_wexpand(a,words) (((words) <= (a)->dmax)?(a):bn_expand2((a),(words)))
 BIGNUM *bn_expand2(BIGNUM *a, int words);
 # ifndef OPENSSL_NO_DEPRECATED
@@ -908,7 +896,6 @@ void ERR_load_BN_strings(void);
 # define BN_F_BN_EXP                                      123
 # define BN_F_BN_EXPAND2                                  108
 # define BN_F_BN_EXPAND_INTERNAL                          120
-# define BN_F_BN_GENERATE_DSA_NONCE                       140
 # define BN_F_BN_GF2M_MOD                                 131
 # define BN_F_BN_GF2M_MOD_EXP                             132
 # define BN_F_BN_GF2M_MOD_MUL                             133
@@ -952,7 +939,6 @@ void ERR_load_BN_strings(void);
 # define BN_R_NOT_INITIALIZED                             107
 # define BN_R_NO_INVERSE                                  108
 # define BN_R_NO_SOLUTION                                 116
-# define BN_R_PRIVATE_KEY_TOO_LARGE                       117
 # define BN_R_P_IS_NOT_PRIME                              112
 # define BN_R_TOO_MANY_ITERATIONS                         113
 # define BN_R_TOO_MANY_TEMPORARY_VARIABLES                109

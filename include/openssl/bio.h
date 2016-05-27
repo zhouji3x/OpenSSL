@@ -174,6 +174,7 @@ extern "C" {
 
 # define BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT   45/* Next DTLS handshake timeout
                                               * to adjust socket timeouts */
+# define BIO_CTRL_DGRAM_SET_DONT_FRAG      48
 
 # define BIO_CTRL_DGRAM_GET_MTU_OVERHEAD   49
 
@@ -219,10 +220,11 @@ extern "C" {
 # define BIO_GHBN_CTRL_FLUSH             5
 
 /* Mostly used in the SSL BIO */
-/*
- * Not used anymore #define BIO_FLAGS_PROTOCOL_DELAYED_READ 0x10 #define
- * BIO_FLAGS_PROTOCOL_DELAYED_WRITE 0x20 #define BIO_FLAGS_PROTOCOL_STARTUP
- * 0x40
+/*-
+ * Not used anymore
+ * #define BIO_FLAGS_PROTOCOL_DELAYED_READ 0x10
+ * #define BIO_FLAGS_PROTOCOL_DELAYED_WRITE 0x20
+ * #define BIO_FLAGS_PROTOCOL_STARTUP   0x40
  */
 
 # define BIO_FLAGS_BASE64_NO_NL  0x100
@@ -275,11 +277,6 @@ void BIO_clear_flags(BIO *b, int flags);
 # define BIO_RR_CONNECT                  0x02
 /* Returned from the accept BIO when an accept would have blocked */
 # define BIO_RR_ACCEPT                   0x03
-/*
- * Returned from the SSL bio when the channel id retrieval code cannot find
- * the private key.
- */
-# define BIO_RR_SSL_CHANNEL_ID_LOOKUP    0x04
 
 /* These are passed by the BIO callback */
 # define BIO_CB_FREE     0x01
@@ -294,7 +291,7 @@ void BIO_clear_flags(BIO *b, int flags);
  * BIO_CB_RETURN flag indicates if it is after the call
  */
 # define BIO_CB_RETURN   0x80
-# define BIO_CB_return(a) ((a)|BIO_CB_RETURN))
+# define BIO_CB_return(a) ((a)|BIO_CB_RETURN)
 # define BIO_cb_pre(a)   (!((a)&BIO_CB_RETURN))
 # define BIO_cb_post(a)  ((a)&BIO_CB_RETURN)
 
@@ -347,13 +344,14 @@ struct bio_st {
 DECLARE_STACK_OF(BIO)
 
 typedef struct bio_f_buffer_ctx_struct {
-    /*
-     * Buffers are setup like this: <---------------------- size
-     * ----------------------->
-     * +---------------------------------------------------+ | consumed |
-     * remaining | free space |
-     * +---------------------------------------------------+ <-- off
-     * --><------- len ------->
+    /*-
+     * Buffers are setup like this:
+     *
+     * <---------------------- size ----------------------->
+     * +---------------------------------------------------+
+     * | consumed | remaining          | free space        |
+     * +---------------------------------------------------+
+     * <-- off --><------- len ------->
      */
     /*- BIO *bio; *//*
      * this is now in the BIO struct
@@ -481,11 +479,11 @@ struct bio_dgram_sctp_prinfo {
 # define BIO_get_conn_hostname(b)  BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,0)
 # define BIO_get_conn_port(b)      BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,1)
 # define BIO_get_conn_ip(b)               BIO_ptr_ctrl(b,BIO_C_GET_CONNECT,2)
-# define BIO_get_conn_int_port(b) BIO_int_ctrl(b,BIO_C_GET_CONNECT,3,0)
+# define BIO_get_conn_int_port(b) BIO_ctrl(b,BIO_C_GET_CONNECT,3,NULL)
 
 # define BIO_set_nbio(b,n)       BIO_ctrl(b,BIO_C_SET_NBIO,(n),NULL)
 
-/* BIO_s_accept_socket() */
+/* BIO_s_accept() */
 # define BIO_set_accept_port(b,name) BIO_ctrl(b,BIO_C_SET_ACCEPT,0,(char *)name)
 # define BIO_get_accept_port(b)  BIO_ptr_ctrl(b,BIO_C_GET_ACCEPT,0)
 /* #define BIO_set_nbio(b,n)    BIO_ctrl(b,BIO_C_SET_NBIO,(n),NULL) */
@@ -498,6 +496,7 @@ struct bio_dgram_sctp_prinfo {
 # define BIO_set_bind_mode(b,mode) BIO_ctrl(b,BIO_C_SET_BIND_MODE,mode,NULL)
 # define BIO_get_bind_mode(b,mode) BIO_ctrl(b,BIO_C_GET_BIND_MODE,0,NULL)
 
+/* BIO_s_accept() and BIO_s_connect() */
 # define BIO_do_connect(b)       BIO_do_handshake(b)
 # define BIO_do_accept(b)        BIO_do_handshake(b)
 # define BIO_do_handshake(b)     BIO_ctrl(b,BIO_C_DO_STATE_MACHINE,0,NULL)
@@ -517,12 +516,15 @@ struct bio_dgram_sctp_prinfo {
 # define BIO_get_url(b,url)      BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,2,(char *)(url))
 # define BIO_get_no_connect_return(b)    BIO_ctrl(b,BIO_C_GET_PROXY_PARAM,5,NULL)
 
+/* BIO_s_datagram(), BIO_s_fd(), BIO_s_socket(), BIO_s_accept() and BIO_s_connect() */
 # define BIO_set_fd(b,fd,c)      BIO_int_ctrl(b,BIO_C_SET_FD,c,fd)
 # define BIO_get_fd(b,c)         BIO_ctrl(b,BIO_C_GET_FD,0,(char *)c)
 
+/* BIO_s_file() */
 # define BIO_set_fp(b,fp,c)      BIO_ctrl(b,BIO_C_SET_FILE_PTR,c,(char *)fp)
 # define BIO_get_fp(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)
 
+/* BIO_s_fd() and BIO_s_file() */
 # define BIO_seek(b,ofs) (int)BIO_ctrl(b,BIO_C_FILE_SEEK,ofs,NULL)
 # define BIO_tell(b)     (int)BIO_ctrl(b,BIO_C_FILE_TELL,0,NULL)
 
@@ -687,7 +689,7 @@ long BIO_debug_callback(BIO *bio, int cmd, const char *argp, int argi,
                         long argl, long ret);
 
 BIO_METHOD *BIO_s_mem(void);
-BIO *BIO_new_mem_buf(void *buf, int len);
+BIO *BIO_new_mem_buf(const void *buf, int len);
 BIO_METHOD *BIO_s_socket(void);
 BIO_METHOD *BIO_s_connect(void);
 BIO_METHOD *BIO_s_accept(void);
@@ -728,13 +730,17 @@ int BIO_dump_indent(BIO *b, const char *bytes, int len, int indent);
 int BIO_dump_fp(FILE *fp, const char *s, int len);
 int BIO_dump_indent_fp(FILE *fp, const char *s, int len, int indent);
 # endif
+int BIO_hex_string(BIO *out, int indent, int width, unsigned char *data,
+                   int datalen);
+
 struct hostent *BIO_gethostbyname(const char *name);
-/*
- * We might want a thread-safe interface too: struct hostent
- * *BIO_gethostbyname_r(const char *name, struct hostent *result, void
- * *buffer, size_t buflen); or something similar (caller allocates a struct
- * hostent, pointed to by "result", and additional buffer space for the
- * various substructures; if the buffer does not suffice, NULL is returned
+/*-
+ * We might want a thread-safe interface too:
+ * struct hostent *BIO_gethostbyname_r(const char *name,
+ *     struct hostent *result, void *buffer, size_t buflen);
+ * or something similar (caller allocates a struct hostent,
+ * pointed to by "result", and additional buffer space for the various
+ * substructures; if the buffer does not suffice, NULL is returned
  * and an appropriate error code is set).
  */
 int BIO_sock_error(int sock);
@@ -763,8 +769,8 @@ int BIO_dgram_sctp_wait_for_dry(BIO *b);
 int BIO_dgram_sctp_msg_waiting(BIO *b);
 # endif
 BIO *BIO_new_fd(int fd, int close_flag);
-BIO *BIO_new_connect(char *host_port);
-BIO *BIO_new_accept(char *host_port);
+BIO *BIO_new_connect(const char *host_port);
+BIO *BIO_new_accept(const char *host_port);
 
 int BIO_new_bio_pair(BIO **bio1, size_t writebuf1,
                      BIO **bio2, size_t writebuf2);
