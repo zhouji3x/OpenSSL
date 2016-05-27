@@ -71,7 +71,7 @@ struct ecdsa_method {
                                  const BIGNUM *inv, const BIGNUM *rp,
                                  EC_KEY *eckey);
     int (*ecdsa_sign_setup) (EC_KEY *eckey, BN_CTX *ctx, BIGNUM **kinv,
-                             BIGNUM **r, const unsigned char *dgst, int dlen);
+                             BIGNUM **r);
     int (*ecdsa_do_verify) (const unsigned char *dgst, int dgst_len,
                             const ECDSA_SIG *sig, EC_KEY *eckey);
 # if 0
@@ -79,8 +79,12 @@ struct ecdsa_method {
     int (*finish) (EC_KEY *eckey);
 # endif
     int flags;
-    char *app_data;
+    void *app_data;
 };
+
+/* The ECDSA_METHOD was allocated and can be freed */
+
+# define ECDSA_METHOD_FLAG_ALLOCATED 0x2
 
 /*
  * If this flag is set the ECDSA method is FIPS compliant and can be used in

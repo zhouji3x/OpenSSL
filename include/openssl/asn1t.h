@@ -125,14 +125,25 @@ extern "C" {
 
 /* This is a ASN1 type which just embeds a template */
 
-/*
- * This pair helps declare a SEQUENCE. We can do: ASN1_SEQUENCE(stname) = {
- * ... SEQUENCE components ...  } ASN1_SEQUENCE_END(stname) This will
- * produce an ASN1_ITEM called stname_it for a structure called stname.  If
- * you want the same structure but a different name then use:
- * ASN1_SEQUENCE(itname) = { ... SEQUENCE components ...  }
- * ASN1_SEQUENCE_END_name(stname, itname) This will create an item called
- * itname_it using a structure called stname.
+/*-
+ * This pair helps declare a SEQUENCE. We can do:
+ *
+ *      ASN1_SEQUENCE(stname) = {
+ *              ... SEQUENCE components ...
+ *      } ASN1_SEQUENCE_END(stname)
+ *
+ *      This will produce an ASN1_ITEM called stname_it
+ *      for a structure called stname.
+ *
+ *      If you want the same structure but a different
+ *      name then use:
+ *
+ *      ASN1_SEQUENCE(itname) = {
+ *              ... SEQUENCE components ...
+ *      } ASN1_SEQUENCE_END_name(stname, itname)
+ *
+ *      This will create an item called itname_it using
+ *      a structure called stname.
  */
 
 # define ASN1_SEQUENCE(tname) \
@@ -216,14 +227,27 @@ extern "C" {
                 #stname \
         ASN1_ITEM_end(tname)
 
-/*
- * This pair helps declare a CHOICE type. We can do: ASN1_CHOICE(chname) = {
- * ... CHOICE options ...  ASN1_CHOICE_END(chname) This will produce an
- * ASN1_ITEM called chname_it for a structure called chname. The structure
- * definition must look like this: typedef struct { int type; union {
- * ASN1_SOMETHING *opt1; ASN1_SOMEOTHER *opt2; } value; } chname; the name
- * of the selector must be 'type'.  to use an alternative selector name use
- * the ASN1_CHOICE_END_selector() version.
+/*-
+ * This pair helps declare a CHOICE type. We can do:
+ *
+ *      ASN1_CHOICE(chname) = {
+ *              ... CHOICE options ...
+ *      ASN1_CHOICE_END(chname)
+ *
+ *      This will produce an ASN1_ITEM called chname_it
+ *      for a structure called chname. The structure
+ *      definition must look like this:
+ *      typedef struct {
+ *              int type;
+ *              union {
+ *                      ASN1_SOMETHING *opt1;
+ *                      ASN1_SOMEOTHER *opt2;
+ *              } value;
+ *      } chname;
+ *
+ *      the name of the selector must be 'type'.
+ *      to use an alternative selector name use the
+ *      ASN1_CHOICE_END_selector() version.
  */
 
 # define ASN1_CHOICE(tname) \
@@ -550,25 +574,49 @@ struct ASN1_ITEM_st {
 # endif
 };
 
-/*
- * These are values for the itype field and determine how the type is
- * interpreted. For PRIMITIVE types the underlying type determines the
- * behaviour if items is NULL. Otherwise templates must contain a single
- * template and the type is treated in the same way as the type specified in
- * the template. For SEQUENCE types the templates field points to the
- * members, the size field is the structure size. For CHOICE types the
- * templates field points to each possible member (typically a union) and the
- * 'size' field is the offset of the selector. The 'funcs' field is used for
- * application specific functions. For COMPAT types the funcs field gives a
- * set of functions that handle this type, this supports the old d2i, i2d
- * convention. The EXTERN type uses a new style d2i/i2d. The new style should
- * be used where possible because it avoids things like the d2i IMPLICIT hack.
- * MSTRING is a multiple string type, it is used for a CHOICE of character
- * strings where the actual strings all occupy an ASN1_STRING structure. In this
- * case the 'utype' field has a special meaning, it is used as a mask of
- * acceptable types using the B_ASN1 constants. NDEF_SEQUENCE is the same as
- * SEQUENCE except that it will use indefinite length constructed encoding if
- * requested.
+/*-
+ * These are values for the itype field and
+ * determine how the type is interpreted.
+ *
+ * For PRIMITIVE types the underlying type
+ * determines the behaviour if items is NULL.
+ *
+ * Otherwise templates must contain a single
+ * template and the type is treated in the
+ * same way as the type specified in the template.
+ *
+ * For SEQUENCE types the templates field points
+ * to the members, the size field is the
+ * structure size.
+ *
+ * For CHOICE types the templates field points
+ * to each possible member (typically a union)
+ * and the 'size' field is the offset of the
+ * selector.
+ *
+ * The 'funcs' field is used for application
+ * specific functions.
+ *
+ * For COMPAT types the funcs field gives a
+ * set of functions that handle this type, this
+ * supports the old d2i, i2d convention.
+ *
+ * The EXTERN type uses a new style d2i/i2d.
+ * The new style should be used where possible
+ * because it avoids things like the d2i IMPLICIT
+ * hack.
+ *
+ * MSTRING is a multiple string type, it is used
+ * for a CHOICE of character strings where the
+ * actual strings all occupy an ASN1_STRING
+ * structure. In this case the 'utype' field
+ * has a special meaning, it is used as a mask
+ * of acceptable types using the B_ASN1 constants.
+ *
+ * NDEF_SEQUENCE is the same as SEQUENCE except
+ * that it will use indefinite length constructed
+ * encoding if requested.
+ *
  */
 
 # define ASN1_ITYPE_PRIMITIVE            0x0

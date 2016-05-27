@@ -101,13 +101,19 @@ extern "C" {
 #  undef OPENSSL_SYS_UNIX
 #  define OPENSSL_SYS_WIN32_UWIN
 # else
-#  if defined(__CYGWIN32__) || defined(OPENSSL_SYSNAME_CYGWIN32)
+#  if defined(__CYGWIN__) || defined(OPENSSL_SYSNAME_CYGWIN)
 #   undef OPENSSL_SYS_UNIX
 #   define OPENSSL_SYS_WIN32_CYGWIN
 #  else
 #   if defined(_WIN32) || defined(OPENSSL_SYSNAME_WIN32)
 #    undef OPENSSL_SYS_UNIX
 #    define OPENSSL_SYS_WIN32
+#   endif
+#   if defined(_WIN64) || defined(OPENSSL_SYSNAME_WIN64)
+#    undef OPENSSL_SYS_UNIX
+#    if !defined(OPENSSL_SYS_WIN64)
+#     define OPENSSL_SYS_WIN64
+#    endif
 #   endif
 #   if defined(OPENSSL_SYSNAME_WINNT)
 #    undef OPENSSL_SYS_UNIX
@@ -121,7 +127,7 @@ extern "C" {
 # endif
 
 /* Anything that tries to look like Microsoft is "Windows" */
-# if defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_WINNT) || defined(OPENSSL_SYS_WINCE)
+# if defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_WIN64) || defined(OPENSSL_SYS_WINNT) || defined(OPENSSL_SYS_WINCE)
 #  undef OPENSSL_SYS_UNIX
 #  define OPENSSL_SYS_WINDOWS
 #  ifndef OPENSSL_SYS_MSDOS
@@ -238,18 +244,20 @@ extern "C" {
 #  define OPENSSL_DECLARE_EXIT  /* declared in unistd.h */
 # endif
 
-/*
+/*-
  * Definitions of OPENSSL_GLOBAL and OPENSSL_EXTERN, to define and declare
  * certain global symbols that, with some compilers under VMS, have to be
- * defined and declared explicitely with globaldef and globalref. Definitions
- * of OPENSSL_EXPORT and OPENSSL_IMPORT, to define and declare DLL exports
- * and imports for compilers under Win32.  These are a little more
- * complicated to use.  Basically, for any library that exports some global
- * variables, the following code must be present in the header file that
- * declares them, before OPENSSL_EXTERN is used:
+ * defined and declared explicitely with globaldef and globalref.
+ * Definitions of OPENSSL_EXPORT and OPENSSL_IMPORT, to define and declare
+ * DLL exports and imports for compilers under Win32.  These are a little
+ * more complicated to use.  Basically, for any library that exports some
+ * global variables, the following code must be present in the header file
+ * that declares them, before OPENSSL_EXTERN is used:
  *
- * #ifdef SOME_BUILD_FLAG_MACRO # undef OPENSSL_EXTERN # define
- * OPENSSL_EXTERN OPENSSL_EXPORT #endif
+ * #ifdef SOME_BUILD_FLAG_MACRO
+ * # undef OPENSSL_EXTERN
+ * # define OPENSSL_EXTERN OPENSSL_EXPORT
+ * #endif
  *
  * The default is to have OPENSSL_EXPORT, OPENSSL_IMPORT and OPENSSL_GLOBAL
  * have some generally sensible values, and for OPENSSL_EXTERN to have the
@@ -271,14 +279,16 @@ extern "C" {
 # endif
 # define OPENSSL_EXTERN OPENSSL_IMPORT
 
-/*
+/*-
  * Macros to allow global variables to be reached through function calls when
- * required (if a shared library version requires it, for example. The way
- * it's done allows definitions like this:
+ * required (if a shared library version requires it, for example.
+ * The way it's done allows definitions like this:
  *
- * // in foobar.c OPENSSL_IMPLEMENT_GLOBAL(int,foobar,0) // in foobar.h
- * OPENSSL_DECLARE_GLOBAL(int,foobar); #define foobar
- * OPENSSL_GLOBAL_REF(foobar)
+ *      // in foobar.c
+ *      OPENSSL_IMPLEMENT_GLOBAL(int,foobar,0)
+ *      // in foobar.h
+ *      OPENSSL_DECLARE_GLOBAL(int,foobar);
+ *      #define foobar OPENSSL_GLOBAL_REF(foobar)
  */
 # ifdef OPENSSL_EXPORT_VAR_AS_FUNCTION
 #  define OPENSSL_IMPLEMENT_GLOBAL(type,name,value)                      \

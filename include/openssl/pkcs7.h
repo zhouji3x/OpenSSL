@@ -76,10 +76,12 @@ extern "C" {
 #  undef PKCS7_SIGNER_INFO
 # endif
 
-/*
- * Encryption_ID DES-CBC Digest_ID MD5 Digest_Encryption_ID rsaEncryption
- * Key_Encryption_ID rsaEncryption
- */
+/*-
+Encryption_ID           DES-CBC
+Digest_ID               MD5
+Digest_Encryption_ID    rsaEncryption
+Key_Encryption_ID       rsaEncryption
+*/
 
 typedef struct pkcs7_issuer_and_serial_st {
     X509_NAME *issuer;

@@ -125,6 +125,7 @@
 #ifndef HEADER_BN_H
 # define HEADER_BN_H
 
+# include <limits.h>
 # include <openssl/e_os2.h>
 # ifndef OPENSSL_NO_FP_API
 #  include <stdio.h>            /* FILE */
@@ -256,44 +257,26 @@ extern "C" {
 #  define BN_HEX_FMT2     "%08X"
 # endif
 
-/*
- * 2011-02-22 SMS. In various places, a size_t variable or a type cast to
- * size_t was used to perform integer-only operations on pointers.  This
- * failed on VMS with 64-bit pointers (CC /POINTER_SIZE = 64) because size_t
- * is still only 32 bits.  What's needed in these cases is an integer type
- * with the same size as a pointer, which size_t is not certain to be. The
- * only fix here is VMS-specific.
- */
-# if defined(OPENSSL_SYS_VMS)
-#  if __INITIAL_POINTER_SIZE == 64
-#   define PTR_SIZE_INT long long
-#  else                         /* __INITIAL_POINTER_SIZE == 64 */
-#   define PTR_SIZE_INT int
-#  endif                        /* __INITIAL_POINTER_SIZE == 64 [else] */
-# else                          /* defined(OPENSSL_SYS_VMS) */
-#  define PTR_SIZE_INT size_t
-# endif                         /* defined(OPENSSL_SYS_VMS) [else] */
-
 # define BN_DEFAULT_BITS 1280
 
 # define BN_FLG_MALLOCED         0x01
 # define BN_FLG_STATIC_DATA      0x02
-# define BN_FLG_CONSTTIME        0x04/* avoid leaking exponent information
-                                      * through timing, BN_mod_exp_mont()
-                                      * will call BN_mod_exp_mont_consttime,
-                                      * BN_div() will call BN_div_no_branch,
-                                      * BN_mod_inverse() will call
-                                      * BN_mod_inverse_no_branch. */
 
-# ifndef OPENSSL_NO_DEPRECATED
+/*
+ * avoid leaking exponent information through timing,
+ * BN_mod_exp_mont() will call BN_mod_exp_mont_consttime,
+ * BN_div() will call BN_div_no_branch,
+ * BN_mod_inverse() will call BN_mod_inverse_no_branch.
+ */
+# define BN_FLG_CONSTTIME        0x04
+
+# ifdef OPENSSL_NO_DEPRECATED
+/* deprecated name for the flag */
 #  define BN_FLG_EXP_CONSTTIME BN_FLG_CONSTTIME
-                                              /* deprecated name for the flag
-                                               */
-                                      /*
-                                       * avoid leaking exponent information
-                                       * through timings * (BN_mod_exp_mont()
-                                       * will call BN_mod_exp_mont_consttime)
-                                       */
+/*
+ * avoid leaking exponent information through timings
+ * (BN_mod_exp_mont() will call BN_mod_exp_mont_consttime)
+ */
 # endif
 
 # ifndef OPENSSL_NO_DEPRECATED
@@ -659,125 +642,64 @@ int BN_div_recp(BIGNUM *dv, BIGNUM *rem, const BIGNUM *m,
  * can be expanded to the appropriate size if needed.
  */
 
-int BN_GF2m_add(BIGNUM *r, const BIGNUM *a, const BIGNUM *b); /* r = a + b */
-#  define BN_GF2m_sub(r, a, b) BN_GF2m_add(r, a, b)
-int BN_GF2m_mod(BIGNUM *r, const BIGNUM *a, const BIGNUM *p); /* r=a mod p */
-int BN_GF2m_mod_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                                 * =
-                                                                                                 * (a
-                                                                                                 * *
-                                                                                                 * b)
-                                                                                                 * mod
-                                                                                                 * p
-                                                                                                 */
-int BN_GF2m_mod_sqr(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                * =
-                                                                                * (a
-                                                                                * *
-                                                                                * a)
-                                                                                * mod
-                                                                                * p
-                                                                                */
-int BN_GF2m_mod_inv(BIGNUM *r, const BIGNUM *b, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                * =
-                                                                                * (1
-                                                                                * /
-                                                                                * b)
-                                                                                * mod
-                                                                                * p
-                                                                                */
-int BN_GF2m_mod_div(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                                 * =
-                                                                                                 * (a
-                                                                                                 * /
-                                                                                                 * b)
-                                                                                                 * mod
-                                                                                                 * p
-                                                                                                 */
-int BN_GF2m_mod_exp(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                                 * =
-                                                                                                 * (a
-                                                                                                 * ^
-                                                                                                 * b)
-                                                                                                 * mod
-                                                                                                 * p
-                                                                                                 */
-int BN_GF2m_mod_sqrt(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx); /* r
-                                                                                 * =
-                                                                                 * sqrt(a)
-                                                                                 * mod
-                                                                                 * p
-                                                                                 */
-int BN_GF2m_mod_solve_quad(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx); /* r^2
-                                                                                       * +
-                                                                                       * r
-                                                                                       * =
-                                                                                       * a
-                                                                                       * mod
-                                                                                       * p
-                                                                                       */
-#  define BN_GF2m_cmp(a, b) BN_ucmp((a), (b))
 /*
- * Some functions allow for representation of the irreducible polynomials as
- * an unsigned int[], say p.  The irreducible f(t) is then of the form:
- * t^p[0] + t^p[1] + ... + t^p[k] where m = p[0] > p[1] > ... > p[k] = 0.
+ * r = a + b
  */
+int BN_GF2m_add(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
+#  define BN_GF2m_sub(r, a, b) BN_GF2m_add(r, a, b)
+/*
+ * r=a mod p
+ */
+int BN_GF2m_mod(BIGNUM *r, const BIGNUM *a, const BIGNUM *p);
+/* r = (a * b) mod p */
+int BN_GF2m_mod_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                    const BIGNUM *p, BN_CTX *ctx);
+/* r = (a * a) mod p */
+int BN_GF2m_mod_sqr(BIGNUM *r, const BIGNUM *a, const BIGNUM *p, BN_CTX *ctx);
+/* r = (1 / b) mod p */
+int BN_GF2m_mod_inv(BIGNUM *r, const BIGNUM *b, const BIGNUM *p, BN_CTX *ctx);
+/* r = (a / b) mod p */
+int BN_GF2m_mod_div(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                    const BIGNUM *p, BN_CTX *ctx);
+/* r = (a ^ b) mod p */
+int BN_GF2m_mod_exp(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                    const BIGNUM *p, BN_CTX *ctx);
+/* r = sqrt(a) mod p */
+int BN_GF2m_mod_sqrt(BIGNUM *r, const BIGNUM *a, const BIGNUM *p,
+                     BN_CTX *ctx);
+/* r^2 + r = a mod p */
+int BN_GF2m_mod_solve_quad(BIGNUM *r, const BIGNUM *a, const BIGNUM *p,
+                           BN_CTX *ctx);
+#  define BN_GF2m_cmp(a, b) BN_ucmp((a), (b))
+/*-
+ * Some functions allow for representation of the irreducible polynomials
+ * as an unsigned int[], say p.  The irreducible f(t) is then of the form:
+ *     t^p[0] + t^p[1] + ... + t^p[k]
+ * where m = p[0] > p[1] > ... > p[k] = 0.
+ */
+/* r = a mod p */
 int BN_GF2m_mod_arr(BIGNUM *r, const BIGNUM *a, const int p[]);
-        /* r = a mod p */
-int BN_GF2m_mod_mul_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const int p[], BN_CTX *ctx); /* r
-                                                                                                   * =
-                                                                                                   * (a
-                                                                                                   * *
-                                                                                                   * b)
-                                                                                                   * mod
-                                                                                                   * p
-                                                                                                   */
-int BN_GF2m_mod_sqr_arr(BIGNUM *r, const BIGNUM *a, const int p[], BN_CTX *ctx); /* r
-                                                                                  * =
-                                                                                  * (a
-                                                                                  * *
-                                                                                  * a)
-                                                                                  * mod
-                                                                                  * p
-                                                                                  */
-int BN_GF2m_mod_inv_arr(BIGNUM *r, const BIGNUM *b, const int p[], BN_CTX *ctx); /* r
-                                                                                  * =
-                                                                                  * (1
-                                                                                  * /
-                                                                                  * b)
-                                                                                  * mod
-                                                                                  * p
-                                                                                  */
-int BN_GF2m_mod_div_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const int p[], BN_CTX *ctx); /* r
-                                                                                                   * =
-                                                                                                   * (a
-                                                                                                   * /
-                                                                                                   * b)
-                                                                                                   * mod
-                                                                                                   * p
-                                                                                                   */
-int BN_GF2m_mod_exp_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, const int p[], BN_CTX *ctx); /* r
-                                                                                                   * =
-                                                                                                   * (a
-                                                                                                   * ^
-                                                                                                   * b)
-                                                                                                   * mod
-                                                                                                   * p
-                                                                                                   */
-int BN_GF2m_mod_sqrt_arr(BIGNUM *r, const BIGNUM *a, const int p[], BN_CTX *ctx); /* r
-                                                                                   * =
-                                                                                   * sqrt(a)
-                                                                                   * mod
-                                                                                   * p
-                                                                                   */
-int BN_GF2m_mod_solve_quad_arr(BIGNUM *r, const BIGNUM *a, const int p[], BN_CTX *ctx); /* r^2
-                                                                                         * +
-                                                                                         * r
-                                                                                         * =
-                                                                                         * a
-                                                                                         * mod
-                                                                                         * p
-                                                                                         */
+/* r = (a * b) mod p */
+int BN_GF2m_mod_mul_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                        const int p[], BN_CTX *ctx);
+/* r = (a * a) mod p */
+int BN_GF2m_mod_sqr_arr(BIGNUM *r, const BIGNUM *a, const int p[],
+                        BN_CTX *ctx);
+/* r = (1 / b) mod p */
+int BN_GF2m_mod_inv_arr(BIGNUM *r, const BIGNUM *b, const int p[],
+                        BN_CTX *ctx);
+/* r = (a / b) mod p */
+int BN_GF2m_mod_div_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                        const int p[], BN_CTX *ctx);
+/* r = (a ^ b) mod p */
+int BN_GF2m_mod_exp_arr(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                        const int p[], BN_CTX *ctx);
+/* r = sqrt(a) mod p */
+int BN_GF2m_mod_sqrt_arr(BIGNUM *r, const BIGNUM *a,
+                         const int p[], BN_CTX *ctx);
+/* r^2 + r = a mod p */
+int BN_GF2m_mod_solve_quad_arr(BIGNUM *r, const BIGNUM *a,
+                               const int p[], BN_CTX *ctx);
 int BN_GF2m_poly2arr(const BIGNUM *a, int p[], int max);
 int BN_GF2m_arr2poly(const int p[], BIGNUM *a);
 
@@ -798,45 +720,52 @@ const BIGNUM *BN_get0_nist_prime_256(void);
 const BIGNUM *BN_get0_nist_prime_384(void);
 const BIGNUM *BN_get0_nist_prime_521(void);
 
-int BN_generate_dsa_nonce(BIGNUM *out, const BIGNUM *range,
-                          const BIGNUM *priv, const unsigned char *message,
-                          size_t message_len, BN_CTX *ctx);
-
 /* library internal functions */
 
-# define bn_expand(a,bits) ((((((bits+BN_BITS2-1))/BN_BITS2)) <= (a)->dmax)?\
-        (a):bn_expand2((a),(bits+BN_BITS2-1)/BN_BITS2))
+# define bn_expand(a,bits) \
+    ( \
+        bits > (INT_MAX - BN_BITS2 + 1) ? \
+            NULL \
+        : \
+            (((bits+BN_BITS2-1)/BN_BITS2) <= (a)->dmax) ? \
+                (a) \
+            : \
+                bn_expand2((a),(bits+BN_BITS2-1)/BN_BITS2) \
+    )
+
 # define bn_wexpand(a,words) (((words) <= (a)->dmax)?(a):bn_expand2((a),(words)))
 BIGNUM *bn_expand2(BIGNUM *a, int words);
 # ifndef OPENSSL_NO_DEPRECATED
 BIGNUM *bn_dup_expand(const BIGNUM *a, int words); /* unused */
 # endif
 
-/*
- * Bignum consistency macros There is one "API" macro, bn_fix_top(), for
- * stripping leading zeroes from bignum data after direct manipulations on
- * the data. There is also an "internal" macro, bn_check_top(), for verifying
- * that there are no leading zeroes. Unfortunately, some auditing is required
- * due to the fact that bn_fix_top() has become an overabused duct-tape
- * because bignum data is occasionally passed around in an inconsistent
- * state. So the following changes have been made to sort this out; -
- * bn_fix_top()s implementation has been moved to bn_correct_top() - if
- * BN_DEBUG isn't defined, bn_fix_top() maps to bn_correct_top(), and
- * bn_check_top() is as before. - if BN_DEBUG *is* defined; - bn_check_top()
- * tries to pollute unused words even if the bignum 'top' is consistent. (ed:
- * only if BN_DEBUG_RAND is defined) - bn_fix_top() maps to bn_check_top()
- * rather than "fixing" anything. The idea is to have debug builds flag up
- * inconsistent bignums when they occur. If that occurs in a bn_fix_top(), we
- * examine the code in question; if the use of bn_fix_top() was appropriate
- * (ie. it follows directly after code that manipulates the bignum) it is
- * converted to bn_correct_top(), and if it was not appropriate, we convert
- * it permanently to bn_check_top() and track down the cause of the bug.
- * Eventually, no internal code should be using the bn_fix_top() macro.
- * External applications and libraries should try this with their own code
- * too, both in terms of building against the openssl headers with BN_DEBUG
- * defined *and* linking with a version of OpenSSL built with it defined.
- * This not only improves external code, it provides more test coverage for
- * openssl's own code.
+/*-
+ * Bignum consistency macros
+ * There is one "API" macro, bn_fix_top(), for stripping leading zeroes from
+ * bignum data after direct manipulations on the data. There is also an
+ * "internal" macro, bn_check_top(), for verifying that there are no leading
+ * zeroes. Unfortunately, some auditing is required due to the fact that
+ * bn_fix_top() has become an overabused duct-tape because bignum data is
+ * occasionally passed around in an inconsistent state. So the following
+ * changes have been made to sort this out;
+ * - bn_fix_top()s implementation has been moved to bn_correct_top()
+ * - if BN_DEBUG isn't defined, bn_fix_top() maps to bn_correct_top(), and
+ *   bn_check_top() is as before.
+ * - if BN_DEBUG *is* defined;
+ *   - bn_check_top() tries to pollute unused words even if the bignum 'top' is
+ *     consistent. (ed: only if BN_DEBUG_RAND is defined)
+ *   - bn_fix_top() maps to bn_check_top() rather than "fixing" anything.
+ * The idea is to have debug builds flag up inconsistent bignums when they
+ * occur. If that occurs in a bn_fix_top(), we examine the code in question; if
+ * the use of bn_fix_top() was appropriate (ie. it follows directly after code
+ * that manipulates the bignum) it is converted to bn_correct_top(), and if it
+ * was not appropriate, we convert it permanently to bn_check_top() and track
+ * down the cause of the bug. Eventually, no internal code should be using the
+ * bn_fix_top() macro. External applications and libraries should try this with
+ * their own code too, both in terms of building against the openssl headers
+ * with BN_DEBUG defined *and* linking with a version of OpenSSL built with it
+ * defined. This not only improves external code, it provides more test
+ * coverage for openssl's own code.
  */
 
 # ifdef BN_DEBUG
@@ -860,6 +789,7 @@ int RAND_pseudo_bytes(unsigned char *buf, int num);
                          * wouldn't be constructed with top!=dmax. */ \
                         BN_ULONG *_not_const; \
                         memcpy(&_not_const, &_bnum1->d, sizeof(BN_ULONG*)); \
+                        /* Debug only - safe to ignore error return */ \
                         RAND_pseudo_bytes(&_tmp_char, 1); \
                         memset((unsigned char *)(_not_const + _bnum1->top), _tmp_char, \
                                 (_bnum1->dmax - _bnum1->top) * sizeof(BN_ULONG)); \
@@ -966,7 +896,6 @@ void ERR_load_BN_strings(void);
 # define BN_F_BN_EXP                                      123
 # define BN_F_BN_EXPAND2                                  108
 # define BN_F_BN_EXPAND_INTERNAL                          120
-# define BN_F_BN_GENERATE_DSA_NONCE                       140
 # define BN_F_BN_GF2M_MOD                                 131
 # define BN_F_BN_GF2M_MOD_EXP                             132
 # define BN_F_BN_GF2M_MOD_MUL                             133
@@ -989,8 +918,8 @@ void ERR_load_BN_strings(void);
 # define BN_F_BN_MPI2BN                                   112
 # define BN_F_BN_NEW                                      113
 # define BN_F_BN_RAND                                     114
-# define BN_F_BN_RSHIFT                                   146
 # define BN_F_BN_RAND_RANGE                               122
+# define BN_F_BN_RSHIFT                                   146
 # define BN_F_BN_USUB                                     115
 
 /* Reason codes. */
@@ -1010,7 +939,6 @@ void ERR_load_BN_strings(void);
 # define BN_R_NOT_INITIALIZED                             107
 # define BN_R_NO_INVERSE                                  108
 # define BN_R_NO_SOLUTION                                 116
-# define BN_R_PRIVATE_KEY_TOO_LARGE                       117
 # define BN_R_P_IS_NOT_PRIME                              112
 # define BN_R_TOO_MANY_ITERATIONS                         113
 # define BN_R_TOO_MANY_TEMPORARY_VARIABLES                109

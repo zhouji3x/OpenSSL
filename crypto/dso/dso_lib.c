@@ -1,4 +1,4 @@
-/* dso_lib.c -*- mode:C; c-file-style: "eay" -*- */
+/* dso_lib.c */
 /*
  * Written by Geoff Thorpe (geoff@geoffthorpe.net) for the OpenSSL project
  * 2000.
@@ -122,6 +122,7 @@ DSO *DSO_new_method(DSO_METHOD *meth)
         ret->meth = meth;
     ret->references = 1;
     if ((ret->meth->init != NULL) && !ret->meth->init(ret)) {
+        sk_void_free(ret->meth_data);
         OPENSSL_free(ret);
         ret = NULL;
     }
@@ -226,22 +227,10 @@ DSO *DSO_load(DSO *dso, const char *filename, DSO_METHOD *meth, int flags)
     }
     if (ret->meth->dso_load == NULL) {
         DSOerr(DSO_F_DSO_LOAD, DSO_R_UNSUPPORTED);
-        /*
-         * Make sure we unset the filename on failure, because we use this to
-         * determine when the DSO has been loaded above.
-         */
-        OPENSSL_free(ret->filename);
-        ret->filename = NULL;
         goto err;
     }
     if (!ret->meth->dso_load(ret)) {
         DSOerr(DSO_F_DSO_LOAD, DSO_R_LOAD_FAILED);
-        /*
-         * Make sure we unset the filename on failure, because we use this to
-         * determine when the DSO has been loaded above.
-         */
-        OPENSSL_free(ret->filename);
-        ret->filename = NULL;
         goto err;
     }
     /* Load succeeded */

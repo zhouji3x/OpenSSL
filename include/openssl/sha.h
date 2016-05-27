@@ -74,7 +74,7 @@ extern "C" {
 #  define FIPS_SHA_SIZE_T size_t
 # endif
 
-/*
+/*-
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  * ! SHA_LONG has to be at least 32 bits wide. If it's wider, then !
  * ! SHA_LONG_LOG2 has to be defined along.                        !
@@ -163,10 +163,12 @@ void SHA256_Transform(SHA256_CTX *c, const unsigned char *data);
  * being exactly 64-bit wide. See Implementation Notes in sha512.c
  * for further details.
  */
+/*
+ * SHA-512 treats input data as a
+ * contiguous array of 64 bit
+ * wide big-endian values.
+ */
 #  define SHA512_CBLOCK   (SHA_LBLOCK*8)
-                                       /* SHA-512 treats input data as a
-                                        * contiguous array of 64 bit wide
-                                        * big-endian values. */
 #  if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
 #   define SHA_LONG64 unsigned __int64
 #   define U64(C)     C##UI64

@@ -7,8 +7,18 @@
 
 #include "arm_arch.h"
 
-unsigned int OPENSSL_armcap_P;
+unsigned int OPENSSL_armcap_P = 0;
 
+#if __ARM_MAX_ARCH__<7
+void OPENSSL_cpuid_setup(void)
+{
+}
+
+unsigned long OPENSSL_rdtsc(void)
+{
+    return 0;
+}
+#else
 static sigset_t all_masked;
 
 static sigjmp_buf ill_jmp;
@@ -40,36 +50,39 @@ unsigned long OPENSSL_rdtsc(void)
  * Use a weak reference to getauxval() so we can use it if it is available but
  * don't break the build if it is not.
  */
-#if defined(__GNUC__) && __GNUC__>=2
+# if defined(__GNUC__) && __GNUC__>=2
 void OPENSSL_cpuid_setup(void) __attribute__ ((constructor));
 extern unsigned long getauxval(unsigned long type) __attribute__ ((weak));
-#else
+# else
 static unsigned long (*getauxval) (unsigned long) = NULL;
-#endif
+# endif
 
 /*
  * ARM puts the the feature bits for Crypto Extensions in AT_HWCAP2, whereas
  * AArch64 used AT_HWCAP.
  */
-#if defined(__arm__) || defined (__arm)
-# define HWCAP                  16/* AT_HWCAP */
-# define HWCAP_NEON             (1 << 12)
+# if defined(__arm__) || defined (__arm)
+#  define HWCAP                  16
+                                  /* AT_HWCAP */
+#  define HWCAP_NEON             (1 << 12)
 
-# define HWCAP_CE               26/* AT_HWCAP2 */
-# define HWCAP_CE_AES           (1 << 0)
-# define HWCAP_CE_PMULL         (1 << 1)
-# define HWCAP_CE_SHA1          (1 << 2)
-# define HWCAP_CE_SHA256        (1 << 3)
-#elif defined(__aarch64__)
-# define HWCAP                  16/* AT_HWCAP */
-# define HWCAP_NEON             (1 << 1)
+#  define HWCAP_CE               26
+                                  /* AT_HWCAP2 */
+#  define HWCAP_CE_AES           (1 << 0)
+#  define HWCAP_CE_PMULL         (1 << 1)
+#  define HWCAP_CE_SHA1          (1 << 2)
+#  define HWCAP_CE_SHA256        (1 << 3)
+# elif defined(__aarch64__)
+#  define HWCAP                  16
+                                  /* AT_HWCAP */
+#  define HWCAP_NEON             (1 << 1)
 
-# define HWCAP_CE               HWCAP
-# define HWCAP_CE_AES           (1 << 3)
-# define HWCAP_CE_PMULL         (1 << 4)
-# define HWCAP_CE_SHA1          (1 << 5)
-# define HWCAP_CE_SHA256        (1 << 6)
-#endif
+#  define HWCAP_CE               HWCAP
+#  define HWCAP_CE_AES           (1 << 3)
+#  define HWCAP_CE_PMULL         (1 << 4)
+#  define HWCAP_CE_SHA1          (1 << 5)
+#  define HWCAP_CE_SHA256        (1 << 6)
+# endif
 
 void OPENSSL_cpuid_setup(void)
 {
@@ -148,3 +161,4 @@ void OPENSSL_cpuid_setup(void)
     sigaction(SIGILL, &ill_oact, NULL);
     sigprocmask(SIG_SETMASK, &oset, NULL);
 }
+#endif

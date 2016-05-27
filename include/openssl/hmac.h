@@ -79,7 +79,6 @@ typedef struct hmac_ctx_st {
     EVP_MD_CTX o_ctx;
     unsigned int key_length;
     unsigned char key[HMAC_MAX_MD_CBLOCK];
-    int key_init;
 } HMAC_CTX;
 
 # define HMAC_size(e)    (EVP_MD_size((e)->md))
@@ -87,10 +86,11 @@ typedef struct hmac_ctx_st {
 void HMAC_CTX_init(HMAC_CTX *ctx);
 void HMAC_CTX_cleanup(HMAC_CTX *ctx);
 
-# define HMAC_cleanup(ctx) HMAC_CTX_cleanup(ctx)/* deprecated */
+/* deprecated */
+# define HMAC_cleanup(ctx) HMAC_CTX_cleanup(ctx)
 
-int HMAC_Init(HMAC_CTX *ctx, const void *key, int len, const EVP_MD *md); /* deprecated
-                                                                           */
+/* deprecated */
+int HMAC_Init(HMAC_CTX *ctx, const void *key, int len, const EVP_MD *md);
 int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
                  const EVP_MD *md, ENGINE *impl);
 int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data, size_t len);

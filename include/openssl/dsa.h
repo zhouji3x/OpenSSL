@@ -89,21 +89,12 @@
 # endif
 
 # define DSA_FLAG_CACHE_MONT_P   0x01
-# define DSA_FLAG_NO_EXP_CONSTTIME       0x02/* new with 0.9.7h; the built-in
-                                              * DSA implementation now uses
-                                              * constant time modular
-                                              * exponentiation for secret
-                                              * exponents by default. This
-                                              * flag causes the faster
-                                              * variable sliding window
-                                              * method to be used for all
-                                              * exponents. */
-# define DSA_FLAG_NONCE_FROM_HASH        0x04/* Causes the DSA nonce to be
-                                              * calculated from
-                                              * SHA512(private_key +
-                                              * H(message) + random). This
-                                              * strengthens DSA against a
-                                              * weak PRNG. */
+/*
+ * new with 0.9.7h; the built-in DSA implementation now uses constant time
+ * modular exponentiation for secret exponents by default. This flag causes
+ * the faster variable sliding window method to be used for all exponents.
+ */
+# define DSA_FLAG_NO_EXP_CONSTTIME       0x02
 
 /*
  * If this flag is set the DSA method is FIPS compliant and can be used in
@@ -138,18 +129,16 @@ typedef struct DSA_SIG_st {
 struct dsa_method {
     const char *name;
     DSA_SIG *(*dsa_do_sign) (const unsigned char *dgst, int dlen, DSA *dsa);
-    int (*dsa_sign_setup) (DSA *dsa, BN_CTX *ctx_in,
-                           BIGNUM **kinvp, BIGNUM **rp,
-                           const unsigned char *dgst, int dlen);
+    int (*dsa_sign_setup) (DSA *dsa, BN_CTX *ctx_in, BIGNUM **kinvp,
+                           BIGNUM **rp);
     int (*dsa_do_verify) (const unsigned char *dgst, int dgst_len,
                           DSA_SIG *sig, DSA *dsa);
     int (*dsa_mod_exp) (DSA *dsa, BIGNUM *rr, BIGNUM *a1, BIGNUM *p1,
                         BIGNUM *a2, BIGNUM *p2, BIGNUM *m, BN_CTX *ctx,
                         BN_MONT_CTX *in_mont);
-    int (*bn_mod_exp) (DSA *dsa, BIGNUM *r, BIGNUM *a, const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx); /* Can
-                                                                                                                            * be
-                                                                                                                            * null
-                                                                                                                            */
+    /* Can be null */
+    int (*bn_mod_exp) (DSA *dsa, BIGNUM *r, BIGNUM *a, const BIGNUM *p,
+                       const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
     int (*init) (DSA *dsa);
     int (*finish) (DSA *dsa);
     int flags;
@@ -298,6 +287,7 @@ void ERR_load_DSA_strings(void);
 # define DSA_F_DO_DSA_PRINT                               104
 # define DSA_F_DSAPARAMS_PRINT                            100
 # define DSA_F_DSAPARAMS_PRINT_FP                         101
+# define DSA_F_DSA_BUILTIN_PARAMGEN2                      126
 # define DSA_F_DSA_DO_SIGN                                112
 # define DSA_F_DSA_DO_VERIFY                              113
 # define DSA_F_DSA_GENERATE_KEY                           124
@@ -327,13 +317,14 @@ void ERR_load_DSA_strings(void);
 # define DSA_R_DATA_TOO_LARGE_FOR_KEY_SIZE                100
 # define DSA_R_DECODE_ERROR                               104
 # define DSA_R_INVALID_DIGEST_TYPE                        106
+# define DSA_R_INVALID_PARAMETERS                         112
 # define DSA_R_MISSING_PARAMETERS                         101
 # define DSA_R_MODULUS_TOO_LARGE                          103
 # define DSA_R_NEED_NEW_SETUP_VALUES                      110
-# define DSA_R_NONCE_CANNOT_BE_PRECOMPUTED                112
 # define DSA_R_NON_FIPS_DSA_METHOD                        111
 # define DSA_R_NO_PARAMETERS_SET                          107
 # define DSA_R_PARAMETER_ENCODING_ERROR                   105
+# define DSA_R_Q_NOT_PRIME                                113
 
 #ifdef  __cplusplus
 }

@@ -605,9 +605,10 @@
 #  define NID_pbeWithMD5AndCast5_CBC      112
 #  define OBJ_pbeWithMD5AndCast5_CBC      1L,2L,840L,113533L,7L,66L,12L
 
-/*
- * This is one sun will soon be using :-( id-dsa-with-sha1 ID ::= { iso(1)
- * member-body(2) us(840) x9-57 (10040) x9cm(4) 3 }
+/*-
+ * This is one sun will soon be using :-(
+ * id-dsa-with-sha1 ID  ::= {
+ *   iso(1) member-body(2) us(840) x9-57 (10040) x9cm(4) 3 }
  */
 #  define SN_dsaWithSHA1                  "DSA-SHA1"
 #  define LN_dsaWithSHA1                  "dsaWithSHA1"
@@ -642,10 +643,14 @@
 #  define NID_ripemd160WithRSA            119
 #  define OBJ_ripemd160WithRSA            1L,3L,36L,3L,3L,1L,2L
 
-/*
- * Taken from rfc2040 RC5_CBC_Parameters ::= SEQUENCE { version INTEGER
- * (v1_0(16)), rounds INTEGER (8..127), blockSizeInBits INTEGER (64, 128), iv
- * OCTET STRING OPTIONAL }
+/*-
+ * Taken from rfc2040
+ *  RC5_CBC_Parameters ::= SEQUENCE {
+ *      version           INTEGER (v1_0(16)),
+ *      rounds            INTEGER (8..127),
+ *      blockSizeInBits   INTEGER (64, 128),
+ *      iv                OCTET STRING OPTIONAL
+ *      }
  */
 #  define SN_rc5_cbc                      "RC5-CBC"
 #  define LN_rc5_cbc                      "rc5-cbc"
@@ -1027,7 +1032,7 @@ const void *OBJ_bsearch_ex_(const void *key, const void *base, int num,
 # define DECLARE_OBJ_BSEARCH_GLOBAL_CMP_FN(type1, type2, nm)     \
   type2 * OBJ_bsearch_##nm(type1 *key, type2 const *base, int num)
 
-/*
+/*-
  * Unsolved problem: if a type is actually a pointer type, like
  * nid_triple is, then its impossible to get a const where you need
  * it. Consider:

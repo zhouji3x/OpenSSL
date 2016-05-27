@@ -1,6 +1,6 @@
 # Auto-generated - DO NOT EDIT!
 # To regenerate, edit openssl.config, then run:
-#     ./import_openssl.sh import /path/to/openssl-1.0.1k.tar.gz
+#     ./import_openssl.sh import /path/to/openssl-1.0.2h.tar.gz
 #
 # This script will append to the following variables:
 #
@@ -20,10 +20,12 @@ common_cflags :=
 common_src_files := \
   ssl/bio_ssl.c \
   ssl/d1_both.c \
-  ssl/d1_enc.c \
+  ssl/d1_clnt.c \
   ssl/d1_lib.c \
+  ssl/d1_meth.c \
   ssl/d1_pkt.c \
   ssl/d1_srtp.c \
+  ssl/d1_srvr.c \
   ssl/kssl.c \
   ssl/s23_clnt.c \
   ssl/s23_lib.c \
@@ -48,6 +50,7 @@ common_src_files := \
   ssl/ssl_asn1.c \
   ssl/ssl_cert.c \
   ssl/ssl_ciph.c \
+  ssl/ssl_conf.c \
   ssl/ssl_err.c \
   ssl/ssl_err2.c \
   ssl/ssl_lib.c \
@@ -55,30 +58,21 @@ common_src_files := \
   ssl/ssl_sess.c \
   ssl/ssl_stat.c \
   ssl/ssl_txt.c \
+  ssl/ssl_utst.c \
   ssl/t1_clnt.c \
   ssl/t1_enc.c \
+  ssl/t1_ext.c \
   ssl/t1_lib.c \
   ssl/t1_meth.c \
   ssl/t1_reneg.c \
   ssl/t1_srvr.c \
+  ssl/t1_trce.c \
   ssl/tls_srp.c \
 
 common_c_includes := \
   vendor/intel/external/openssl/. \
   vendor/intel/external/openssl/crypto \
   vendor/intel/external/openssl/include \
-
-arm_cflags :=
-
-arm_src_files :=
-
-arm_exclude_files :=
-
-arm64_cflags :=
-
-arm64_src_files :=
-
-arm64_exclude_files :=
 
 x86_cflags :=
 
@@ -92,27 +86,12 @@ x86_64_src_files :=
 
 x86_64_exclude_files :=
 
-mips_cflags :=
-
-mips_src_files :=
-
-mips_exclude_files :=
-
 
 LOCAL_CFLAGS += $(common_cflags)
 LOCAL_C_INCLUDES += $(common_c_includes)
-
-LOCAL_SRC_FILES_arm += $(filter-out $(arm_exclude_files),$(common_src_files) $(arm_src_files))
-LOCAL_CFLAGS_arm += $(arm_cflags)
-
-LOCAL_SRC_FILES_arm64 += $(filter-out $(arm64_exclude_files),$(common_src_files) $(arm64_src_files))
-LOCAL_CFLAGS_arm64 += $(arm64_cflags)
 
 LOCAL_SRC_FILES_x86 += $(filter-out $(x86_exclude_files),$(common_src_files) $(x86_src_files))
 LOCAL_CFLAGS_x86 += $(x86_cflags)
 
 LOCAL_SRC_FILES_x86_64 += $(filter-out $(x86_64_exclude_files),$(common_src_files) $(x86_64_src_files))
 LOCAL_CFLAGS_x86_64 += $(x86_64_cflags)
-
-LOCAL_SRC_FILES_mips += $(filter-out $(mips_exclude_files),$(common_src_files) $(mips_src_files))
-LOCAL_CFLAGS_mips += $(mips_cflags)

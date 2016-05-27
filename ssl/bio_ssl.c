@@ -199,10 +199,6 @@ static int ssl_read(BIO *b, char *out, int outl)
         BIO_set_retry_special(b);
         retry_reason = BIO_RR_SSL_X509_LOOKUP;
         break;
-    case SSL_ERROR_WANT_CHANNEL_ID_LOOKUP:
-        BIO_set_retry_special(b);
-        retry_reason = BIO_RR_SSL_CHANNEL_ID_LOOKUP;
-        break;
     case SSL_ERROR_WANT_ACCEPT:
         BIO_set_retry_special(b);
         retry_reason = BIO_RR_ACCEPT;
@@ -274,10 +270,6 @@ static int ssl_write(BIO *b, const char *out, int outl)
     case SSL_ERROR_WANT_X509_LOOKUP:
         BIO_set_retry_special(b);
         retry_reason = BIO_RR_SSL_X509_LOOKUP;
-        break;
-    case SSL_ERROR_WANT_CHANNEL_ID_LOOKUP:
-        BIO_set_retry_special(b);
-        retry_reason = BIO_RR_SSL_CHANNEL_ID_LOOKUP;
         break;
     case SSL_ERROR_WANT_CONNECT:
         BIO_set_retry_special(b);
@@ -426,6 +418,10 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
         case SSL_ERROR_WANT_CONNECT:
             BIO_set_flags(b, BIO_FLAGS_IO_SPECIAL | BIO_FLAGS_SHOULD_RETRY);
             b->retry_reason = b->next_bio->retry_reason;
+            break;
+        case SSL_ERROR_WANT_X509_LOOKUP:
+            BIO_set_retry_special(b);
+            b->retry_reason = BIO_RR_SSL_X509_LOOKUP;
             break;
         default:
             break;

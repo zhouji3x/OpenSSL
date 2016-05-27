@@ -256,8 +256,8 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
     dest->tlsext_ecpointformatlist = NULL;
     dest->tlsext_ellipticcurvelist = NULL;
 # endif
-#endif
     dest->tlsext_tick = NULL;
+#endif
 #ifndef OPENSSL_NO_SRP
     dest->srp_username = NULL;
 #endif
@@ -324,7 +324,6 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
             goto err;
     }
 # endif
-#endif
 
     if (ticket != 0) {
         dest->tlsext_tick = BUF_memdup(src->tlsext_tick, src->tlsext_ticklen);
@@ -334,6 +333,7 @@ SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket)
         dest->tlsext_tick_lifetime_hint = 0;
         dest->tlsext_ticklen = 0;
     }
+#endif
 
 #ifndef OPENSSL_NO_SRP
     if (src->srp_username) {
@@ -400,11 +400,6 @@ static int def_generate_session_id(const SSL *ssl, unsigned char *id,
     return 0;
 }
 
-void SSL_set_session_creation_enabled(SSL *s, int creation_enabled)
-{
-    s->session_creation_enabled = creation_enabled;
-}
-
 int ssl_get_new_session(SSL *s, int session)
 {
     /* This gets used by clients and servers. */
@@ -413,9 +408,6 @@ int ssl_get_new_session(SSL *s, int session)
     SSL_SESSION *ss = NULL;
     GEN_SESSION_CB cb = def_generate_session_id;
 
-    /* caller should check this if they can do better error handling */
-    if (!s->session_creation_enabled)
-        return (0);
     if ((ss = SSL_SESSION_new()) == NULL)
         return (0);
 
@@ -451,6 +443,9 @@ int ssl_get_new_session(SSL *s, int session)
             ss->session_id_length = SSL3_SSL_SESSION_ID_LENGTH;
         } else if (s->version == DTLS1_VERSION) {
             ss->ssl_version = DTLS1_VERSION;
+            ss->session_id_length = SSL3_SSL_SESSION_ID_LENGTH;
+        } else if (s->version == DTLS1_2_VERSION) {
+            ss->ssl_version = DTLS1_2_VERSION;
             ss->session_id_length = SSL3_SSL_SESSION_ID_LENGTH;
         } else {
             SSLerr(SSL_F_SSL_GET_NEW_SESSION, SSL_R_UNSUPPORTED_SSL_VERSION);
@@ -527,48 +522,6 @@ int ssl_get_new_session(SSL *s, int session)
                 return 0;
             }
         }
-# ifndef OPENSSL_NO_EC
-        if (s->tlsext_ecpointformatlist) {
-            if (ss->tlsext_ecpointformatlist != NULL)
-                OPENSSL_free(ss->tlsext_ecpointformatlist);
-            if ((ss->tlsext_ecpointformatlist =
-                 OPENSSL_malloc(s->tlsext_ecpointformatlist_length)) ==
-                NULL) {
-                SSLerr(SSL_F_SSL_GET_NEW_SESSION, ERR_R_MALLOC_FAILURE);
-                SSL_SESSION_free(ss);
-                return 0;
-            }
-            ss->tlsext_ecpointformatlist_length =
-                s->tlsext_ecpointformatlist_length;
-            memcpy(ss->tlsext_ecpointformatlist, s->tlsext_ecpointformatlist,
-                   s->tlsext_ecpointformatlist_length);
-        }
-        if (s->tlsext_ellipticcurvelist) {
-            if (ss->tlsext_ellipticcurvelist != NULL)
-                OPENSSL_free(ss->tlsext_ellipticcurvelist);
-            if ((ss->tlsext_ellipticcurvelist =
-                 OPENSSL_malloc(s->tlsext_ellipticcurvelist_length)) ==
-                NULL) {
-                SSLerr(SSL_F_SSL_GET_NEW_SESSION, ERR_R_MALLOC_FAILURE);
-                SSL_SESSION_free(ss);
-                return 0;
-            }
-            ss->tlsext_ellipticcurvelist_length =
-                s->tlsext_ellipticcurvelist_length;
-            memcpy(ss->tlsext_ellipticcurvelist, s->tlsext_ellipticcurvelist,
-                   s->tlsext_ellipticcurvelist_length);
-        }
-# endif
-#endif
-#ifndef OPENSSL_NO_PSK
-        if (s->psk_identity_hint) {
-            ss->psk_identity_hint = BUF_strdup(s->psk_identity_hint);
-            if (ss->psk_identity_hint == NULL) {
-                SSLerr(SSL_F_SSL_GET_NEW_SESSION, ERR_R_MALLOC_FAILURE);
-                SSL_SESSION_free(ss);
-                return 0;
-            }
-        }
 #endif
     } else {
         ss->session_id_length = 0;
@@ -620,9 +573,6 @@ int ssl_get_prev_session(SSL *s, unsigned char *session_id, int len,
     int r;
 #endif
 
-    if (len < 0 || len > SSL_MAX_SSL_SESSION_ID_LENGTH)
-        goto err;
-
     if (session_id + len > limit) {
         fatal = 1;
         goto err;
@@ -652,8 +602,7 @@ int ssl_get_prev_session(SSL *s, unsigned char *session_id, int len,
 
     if (try_session_cache &&
         ret == NULL &&
-        !(s->
-          session_ctx->session_cache_mode &
+        !(s->session_ctx->session_cache_mode &
           SSL_SESS_CACHE_NO_INTERNAL_LOOKUP)) {
         SSL_SESSION data;
         data.ssl_version = s->version;
@@ -694,8 +643,7 @@ int ssl_get_prev_session(SSL *s, unsigned char *session_id, int len,
              * well if and only if we are supposed to.
              */
             if (!
-                (s->
-                 session_ctx->session_cache_mode &
+                (s->session_ctx->session_cache_mode &
                  SSL_SESS_CACHE_NO_INTERNAL_STORE))
                 /*
                  * The following should not return 1, otherwise, things are
@@ -1286,16 +1234,6 @@ void SSL_CTX_set_client_cert_cb(SSL_CTX *ctx,
 int (*SSL_CTX_get_client_cert_cb(SSL_CTX *ctx)) (SSL *ssl, X509 **x509,
                                                  EVP_PKEY **pkey) {
     return ctx->client_cert_cb;
-}
-
-void SSL_CTX_set_channel_id_cb(SSL_CTX *ctx,
-                               void (*cb) (SSL *ssl, EVP_PKEY **pkey))
-{
-    ctx->channel_id_cb = cb;
-}
-
-void (*SSL_CTX_get_channel_id_cb(SSL_CTX *ctx)) (SSL *ssl, EVP_PKEY **pkey) {
-    return ctx->channel_id_cb;
 }
 
 #ifndef OPENSSL_NO_ENGINE
