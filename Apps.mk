@@ -3,16 +3,14 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+LOCAL_IS_HOST_MODULE := true
 LOCAL_MODULE := openssl
+LOCAL_MODULE_HOST_OS := linux windows
 
-ifeq ($(HOST_OS),windows)
-  LOCAL_LDLIBS += -lws2_32 -lgdi32
-endif
+LOCAL_LDLIBS_windows += -lws2_32 -lgdi32
 
-ifeq ($(HOST_OS),linux)
-  LOCAL_LDLIBS += -lrt -ldl -lpthread
-  LOCAL_CXX_STL := libc++_static
-endif
+LOCAL_LDLIBS_linux += -lrt -ldl -lpthread
+LOCAL_CXX_STL_linux := libc++_static
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_STATIC_LIBRARIES := libssl-static2 libcrypto_static2

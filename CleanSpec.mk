@@ -44,17 +44,12 @@
 #$(call add-clean-step, find $(OUT_DIR) -type f -name "IGTalkSession*" -print0 | xargs -0 rm -f)
 #$(call add-clean-step, rm -rf $(PRODUCT_OUT)/data/*)
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/STATIC_LIBRARIES/libssl_static_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/STATIC_LIBRARIES/libcrypto_static_intermediates)
-$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/*ssl*_intermediates $(PRODUCT_OUT)/obj/*/libssl_*intermediates $(PRODUCT_OUT)/obj/*/libcrypto_*intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto2_intermediates $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl2_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/openssl_intermediates $(PRODUCT_OUT)/obj/EXECUTABLES/ssltest_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libssl2_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libcrypto2_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/STATIC_LIBRARIES/libssl_static2_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/STATIC_LIBRARIES/libcrypto_static2_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/*ssl*_intermediates $(PRODUCT_OUT)/obj/*/libssl_*2_intermediates $(PRODUCT_OUT)/obj/*/libcrypto_*2*intermediates)
 
 # ************************************************
 # NEWER CLEAN STEPS MUST BE AT THE END OF THE LIST

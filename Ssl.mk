@@ -38,9 +38,11 @@ include $(BUILD_SHARED_LIBRARY)
 #######################################
 # host shared library
 include $(CLEAR_VARS)
+LOCAL_IS_HOST_MODULE := true
 LOCAL_SHARED_LIBRARIES += libcrypto-host2 $(log_shared_libraries)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libssl-host2
+LOCAL_MODULE_HOST_OS := linux windows
 LOCAL_MULTILIB := both
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Ssl.mk
 include $(LOCAL_PATH)/Ssl-config-host.mk
@@ -50,10 +52,12 @@ include $(BUILD_HOST_SHARED_LIBRARY)
 #######################################
 # host static library
 include $(CLEAR_VARS)
+LOCAL_IS_HOST_MODULE := true
 LOCAL_SHARED_LIBRARIES +=  $(log_shared_libraries)
 LOCAL_STATIC_LIBRARIES += libcrypto_static2
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libssl-static2
+LOCAL_MODULE_HOST_OS := linux windows
 LOCAL_MULTILIB := both
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Ssl.mk
 include $(LOCAL_PATH)/Ssl-config-host.mk

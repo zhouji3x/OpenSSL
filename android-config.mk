@@ -27,19 +27,17 @@ ifneq (,$(filter -DZLIB, $(openssl_cflags_32) $(openssl_cflags_64) \
 $(error ZLIB should not be enabled in openssl configuration)
 endif
 
-LOCAL_CFLAGS_32 += $(openssl_cflags_32)
-LOCAL_CFLAGS_64 += $(openssl_cflags_64)
+LOCAL_CFLAGS_linux_32 = $(LOCAL_CFLAGS_32) $(openssl_cflags_32)
+LOCAL_CFLAGS_linux_64 = $(LOCAL_CFLAGS_64) $(openssl_cflags_64)
 
-LOCAL_CFLAGS_32 := $(filter-out -DTERMIO, $(LOCAL_CFLAGS_32))
-LOCAL_CFLAGS_64 := $(filter-out -DTERMIO, $(LOCAL_CFLAGS_64))
+LOCAL_CFLAGS_linux_32 := $(filter-out -DTERMIO, $(LOCAL_CFLAGS_linux_32))
+LOCAL_CFLAGS_linux_64 := $(filter-out -DTERMIO, $(LOCAL_CFLAGS_linux_64))
 # filter out static flags too
 openssl_cflags_static_32 := $(filter-out -DTERMIO, $(openssl_cflags_static_32))
 openssl_cflags_static_64 := $(filter-out -DTERMIO, $(openssl_cflags_static_64))
 
-ifeq ($(HOST_OS),windows)
-LOCAL_CFLAGS_32 := $(filter-out -DDSO_DLFCN -DHAVE_DLFCN_H,$(LOCAL_CFLAGS_32))
-LOCAL_CFLAGS_64 := $(filter-out -DDSO_DLFCN -DHAVE_DLFCN_H,$(LOCAL_CFLAGS_64))
-endif
+LOCAL_CFLAGS_windows_32 := $(filter-out -DDSO_DLFCN -DHAVE_DLFCN_H,$(LOCAL_CFLAGS_linux_32))
+LOCAL_CFLAGS_windows_64 := $(filter-out -DDSO_DLFCN -DHAVE_DLFCN_H,$(LOCAL_CFLAGS_linux_64))
 
 LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-unused-parameter
 
