@@ -668,9 +668,18 @@ x86_64_cflags += -DRC4_INT="unsigned int"
 LOCAL_CFLAGS += $(common_cflags)
 LOCAL_C_INCLUDES += $(common_c_includes) $(local_c_includes)
 
+ifneq (,$(findstring cht,$(TARGET_PRODUCT)))
 LOCAL_CFLAGS_linux_x86 += $(x86_cflags)
+else
+LOCAL_CFLAGS_x86 += $(x86_cflags)
+endif
 LOCAL_SRC_FILES_linux_x86 += $(filter-out $(x86_exclude_files), $(common_src_files) $(x86_src_files))
+
+ifneq (,$(findstring cht,$(TARGET_PRODUCT)))
 LOCAL_CFLAGS_linux_x86_64 += $(x86_64_cflags)
+else
+LOCAL_CFLAGS_x86_64 += $(x86_64_cflags)
+endif
 LOCAL_SRC_FILES_linux_x86_64 += $(filter-out $(x86_64_exclude_files), $(common_src_files) $(x86_64_src_files))
 LOCAL_SRC_FILES_windows += $(common_src_files)
 
