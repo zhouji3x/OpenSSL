@@ -53,7 +53,7 @@ LOCAL_CFLAGS += -DPURIFY
 LOCAL_LDLIBS += -ldl
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libcrypto-host2
-LOCAL_MODULE_HOST_OS := linux windows
+#LOCAL_MODULE_HOST_OS := linux windows
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Crypto.mk
 LOCAL_MULTILIB := both
 include $(LOCAL_PATH)/Crypto-config-host.mk
@@ -70,7 +70,7 @@ LOCAL_CFLAGS += -DPURIFY
 LOCAL_LDLIBS += -ldl
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libcrypto_static2
-LOCAL_MODULE_HOST_OS := linux windows
+#LOCAL_MODULE_HOST_OS := linux windows
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Crypto.mk
 include $(LOCAL_PATH)/Crypto-config-host.mk
 include $(LOCAL_PATH)/android-config.mk
