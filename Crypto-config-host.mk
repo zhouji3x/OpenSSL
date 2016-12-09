@@ -684,4 +684,3 @@ LOCAL_CFLAGS_x86_64 += $(x86_64_cflags)
 endif
 LOCAL_SRC_FILES_linux_x86_64 += $(filter-out $(x86_64_exclude_files), $(common_src_files) $(x86_64_src_files))
 LOCAL_SRC_FILES_windows += $(common_src_files)
-

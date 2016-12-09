@@ -5,7 +5,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_IS_HOST_MODULE := true
 LOCAL_MODULE := openssl
-LOCAL_MODULE_HOST_OS := linux windows
+#LOCAL_MODULE_HOST_OS := linux windows
 
 LOCAL_LDLIBS_windows += -lws2_32 -lgdi32
 
