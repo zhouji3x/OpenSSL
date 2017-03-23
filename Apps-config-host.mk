@@ -1,6 +1,6 @@
 # Auto-generated - DO NOT EDIT!
 # To regenerate, edit openssl.config, then run:
-#     ./import_openssl.sh import /path/to/openssl-1.0.2j.tar.gz
+#     ./import_openssl.sh import /path/to/openssl-1.0.2k.tar.gz
 #
 # This script will append to the following variables:
 #
@@ -90,17 +90,9 @@ x86_64_exclude_files :=
 LOCAL_CFLAGS += $(common_cflags)
 LOCAL_C_INCLUDES += $(common_c_includes) $(local_c_includes)
 
-
-ifneq (,$(findstring cht,$(TARGET_PRODUCT)))
 LOCAL_CFLAGS_linux_x86 += $(x86_cflags)
-else
-LOCAL_CFLAGS_x86 += $(x86_cflags)
-endif
 LOCAL_SRC_FILES_linux_x86 += $(filter-out $(x86_exclude_files), $(common_src_files) $(x86_src_files))
-ifneq (,$(findstring cht,$(TARGET_PRODUCT)))
 LOCAL_CFLAGS_linux_x86_64 += $(x86_64_cflags)
-else
-LOCAL_CFLAGS_x86_64 += $(x86_64_cflags)
-endif
 LOCAL_SRC_FILES_linux_x86_64 += $(filter-out $(x86_64_exclude_files), $(common_src_files) $(x86_64_src_files))
 LOCAL_SRC_FILES_windows += $(common_src_files)
+
