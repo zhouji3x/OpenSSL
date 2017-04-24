@@ -30,6 +30,7 @@ endif
 LOCAL_SHARED_LIBRARIES += libcrypto2 $(log_shared_libraries)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libssl2
+LOCAL_PROPRIETARY_MODULE := true
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/android-config.mk $(LOCAL_PATH)/Ssl.mk
 include $(LOCAL_PATH)/Ssl-config-target.mk
 include $(LOCAL_PATH)/android-config.mk
@@ -70,6 +71,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := ssl/ssltest.c
 LOCAL_SHARED_LIBRARIES := libssl2 libcrypto2 $(log_shared_libraries)
 LOCAL_MODULE := ssltest2
+LOCAL_PROPRIETARY_MODULE := true
 LOCAL_MULTILIB := both
 LOCAL_MODULE_STEM_32 := ssltest
 LOCAL_MODULE_STEM_64 := ssltest64
