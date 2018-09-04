@@ -644,7 +644,7 @@ static void print_leak_doall_arg(const MEM *m, MEM_LEAK *l)
     if (options & V_CRYPTO_MDEBUG_TIME) {
 # if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32) && \
             !defined(OPENSSL_SYS_OS2) && !defined(OPENSSL_SYS_SUNOS) && \
-            (!defined(OPENSSL_SYS_VMS) || defined(localtime_r))
+            (!defined(OPENSSL_SYS_VMS) && defined(localtime_r))
         lcl = localtime_r(&m->time, &result);
 # else
         lcl = localtime(&m->time);
