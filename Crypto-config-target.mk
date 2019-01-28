@@ -1,6 +1,6 @@
 # Auto-generated - DO NOT EDIT!
 # To regenerate, edit openssl.config, then run:
-#     ./import_openssl.sh import /path/to/openssl-1.0.2p.tar.gz
+#     ./import_openssl.sh import /path/to/openssl-1.0.2q.tar.gz
 #
 # This script will append to the following variables:
 #
@@ -364,6 +364,7 @@ common_src_files := \
   crypto/evp/pmeth_gn.c \
   crypto/evp/pmeth_lib.c \
   crypto/ex_data.c \
+  crypto/getenv.c \
   crypto/hmac/hm_ameth.c \
   crypto/hmac/hm_pmeth.c \
   crypto/hmac/hmac.c \
