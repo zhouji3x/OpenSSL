@@ -25,7 +25,7 @@ char *ossl_safe_getenv(const char *name)
 
 #ifndef SECURE_GETENV
     //if (OPENSSL_issetugid())
-     //   return NULL;
+        //return NULL;
     return getenv(name);
 #endif
 }
